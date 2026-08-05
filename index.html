@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>ZabonOmuz — Забонро омӯз, ҳар рӯз</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#0a0b0f; --bg-2:#101319; --bg-3:#161a22;
+  --surface: rgba(255,255,255,.055); --surface-2: rgba(255,255,255,.09);
+  --border: rgba(255,255,255,.11); --border-soft: rgba(255,255,255,.06);
+  --text:#eef1f5; --text-dim:#9aa2b1; --text-faint:#5f6674;
+  --silver:#c8cdd6; --silver-2:#8d93a1;
+  --violet:#8b7cf9; --violet-2:#6a5cf0; --teal:#2bd9c9; --gold:#e9c27c;
+  --grad-1: linear-gradient(135deg,#8b7cf9 0%,#2bd9c9 100%);
+  --grad-2: linear-gradient(135deg,#2bd9c9 0%,#8b7cf9 100%);
+  --shadow-lg: 0 30px 80px -20px rgba(0,0,0,.65);
+  --shadow-md: 0 14px 40px -12px rgba(0,0,0,.55);
+  --radius: 22px; --radius-sm: 14px; --radius-lg: 30px;
+  --font-d: 'Sora', sans-serif; --font-b:'Manrope', sans-serif;
+  color-scheme: dark;
+}
+html.light{
+  --bg:#eef0f3; --bg-2:#e6e9ee; --bg-3:#dde1e8;
+  --surface: rgba(255,255,255,.55); --surface-2: rgba(255,255,255,.78);
+  --border: rgba(20,22,30,.09); --border-soft: rgba(20,22,30,.05);
+  --text:#161922; --text-dim:#5c6270; --text-faint:#9298a6;
+  --silver:#5c6270; --silver-2:#7b8190;
+  --shadow-lg: 0 30px 70px -22px rgba(30,34,50,.22);
+  --shadow-md: 0 12px 34px -14px rgba(30,34,50,.18);
+  color-scheme: light;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-b); background:var(--bg); color:var(--text);
+  overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  transition: background .5s ease, color .5s ease;
+}
+h1,h2,h3,.disp{font-family:var(--font-d); letter-spacing:-.02em;}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+input{font-family:inherit;}
+::selection{background:var(--violet); color:#fff;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+/* ============ BACKDROP (luxury silver ambience) ============ */
+.backdrop{
+  position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+}
+.backdrop::before{
+  content:''; position:absolute; inset:-20%;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(139,124,249,.18), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(43,217,201,.14), transparent 42%),
+    radial-gradient(circle at 50% 90%, rgba(200,205,214,.08), transparent 50%);
+  filter: blur(10px);
+  animation: drift 26s ease-in-out infinite alternate;
+}
+html.light .backdrop::before{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(139,124,249,.14), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(43,217,201,.12), transparent 42%),
+    radial-gradient(circle at 50% 90%, rgba(120,126,140,.10), transparent 50%);
+}
+@keyframes drift{ 0%{transform:translate(0,0) scale(1);} 100%{transform:translate(-2%,2%) scale(1.06);} }
+.grain{position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+#app{position:relative; z-index:2; min-height:100vh;}
+.screen{ animation: fadeUp .5s cubic-bezier(.22,1,.36,1); }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+/* ============ GLASS CARD ============ */
+.glass{
+  background:var(--surface); backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow: var(--shadow-md);
+}
+.glass-strong{ background:var(--surface-2); }
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:15px 26px; border-radius:16px; font-weight:700; font-size:15px;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s ease, filter .3s ease;
+  position:relative; overflow:hidden; user-select:none;
+}
+.btn:active{ transform: scale(.96); }
+.btn-primary{ background:var(--grad-1); color:#0a0b0f; box-shadow: 0 14px 34px -10px rgba(139,124,249,.55); }
+.btn-primary:hover{ filter:brightness(1.08); transform:translateY(-2px); box-shadow:0 20px 42px -10px rgba(139,124,249,.65); }
+.btn-ghost{ background:var(--surface); border:1px solid var(--border); color:var(--text); }
+.btn-ghost:hover{ background:var(--surface-2); transform:translateY(-2px); }
+.btn-gold{ background:linear-gradient(135deg,#f0d59a,#e0af5a); color:#241a05; box-shadow:0 14px 30px -10px rgba(224,175,90,.55);}
+.btn-gold:hover{ filter:brightness(1.08); transform:translateY(-2px); }
+.btn-block{ width:100%; }
+.ripple{ position:absolute; border-radius:50%; background:rgba(255,255,255,.5); transform:scale(0); animation:rip .6s ease-out; pointer-events:none; }
+@keyframes rip{ to{ transform:scale(3); opacity:0; } }
+
+/* ============ LAYOUT SHELLS ============ */
+.center-shell{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.app-shell{ max-width:920px; margin:0 auto; padding:28px 20px 120px; }
+.topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; }
+.brand{ display:flex; align-items:center; gap:10px; font-family:var(--font-d); font-weight:800; font-size:21px; letter-spacing:-.01em;}
+.brand .mark{ width:34px; height:34px; border-radius:11px; background:var(--grad-1); display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 8px 20px -6px rgba(139,124,249,.6);}
+.xp-pill{ display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:100px; font-weight:700; font-size:13px; }
+
+/* ============ AUTH / LAMP SCREEN ============ */
+.auth-wrap{ display:grid; grid-template-columns: 1fr 1fr; gap:0; width:100%; max-width:980px; min-height:600px; border-radius:28px; overflow:hidden; box-shadow:var(--shadow-lg); }
+.lamp-side{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 30%, #14161d 0%, #08090c 70%); transition: background 1.2s ease; overflow:hidden; }
+.lamp-side.lit{ background:radial-gradient(ellipse at 50% 22%, #3a2f16 0%, #14100a 55%, #08090c 100%); }
+.lamp-glow{ position:absolute; top:6%; left:50%; transform:translateX(-50%); width:520px; height:520px; border-radius:50%;
+  background:radial-gradient(circle, rgba(233,194,124,.55) 0%, rgba(233,194,124,.16) 40%, transparent 70%);
+  opacity:0; transition:opacity 1s ease; filter:blur(4px); pointer-events:none;}
+.lamp-side.lit .lamp-glow{ opacity:1; }
+.lamp-svg{ position:relative; z-index:2; width:170px; }
+.bulb{ transition: fill .6s ease, filter .6s ease; fill:#3a3a42; }
+.lamp-side.lit .bulb{ fill:#ffe9b8; filter: drop-shadow(0 0 22px rgba(255,222,150,.9)); }
+.cord{ cursor:pointer; }
+.cord-line{ stroke:#555; stroke-width:2; transition:stroke .4s ease; }
+.lamp-side.lit .cord-line{ stroke:#a6905c; }
+.cord-pull{ transition: transform .18s cubic-bezier(.34,1.7,.64,1); transform-origin: top center; }
+.lamp-side.lit .cord-pull{ animation: pulled .5s cubic-bezier(.34,1.7,.64,1); }
+@keyframes pulled{ 0%{transform:translateY(0);} 40%{transform:translateY(10px);} 100%{transform:translateY(0);} }
+.lamp-caption{ position:relative; z-index:2; margin-top:26px; text-align:center; color:var(--text-faint); font-size:13px; letter-spacing:.02em;}
+.lamp-side.lit .lamp-caption{ color:#c9b184; }
+.lamp-hint{ font-size:12px; margin-top:6px; opacity:.6; }
+
+.form-side{ background:var(--bg-2); padding:52px 46px; display:flex; flex-direction:column; justify-content:center; }
+.tabs{ display:flex; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:4px; margin-bottom:28px; }
+.tab{ flex:1; text-align:center; padding:10px; border-radius:11px; font-weight:700; font-size:13.5px; color:var(--text-dim); transition:all .3s ease; }
+.tab.active{ background:var(--grad-1); color:#0a0b0f; box-shadow:0 8px 18px -8px rgba(139,124,249,.6); }
+.field{ margin-bottom:16px; }
+.field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:7px; font-weight:600; letter-spacing:.02em; }
+.field input{
+  width:100%; padding:14px 16px; border-radius:13px; border:1px solid var(--border); background:var(--surface);
+  color:var(--text); font-size:14.5px; outline:none; transition: border .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.field input:focus{ border-color:var(--violet); box-shadow:0 0 0 4px rgba(139,124,249,.18); background:var(--surface-2); }
+.form-title{ font-size:26px; font-weight:800; margin-bottom:6px; }
+.form-sub{ color:var(--text-dim); font-size:13.5px; margin-bottom:26px; }
+.err{ color:#ff8b8b; font-size:12.5px; margin-top:-8px; margin-bottom:14px; min-height:14px; }
+
+/* ============ PASSWORD VISIBILITY TOGGLE ============ */
+.pass-wrap{ position:relative; }
+.pass-wrap input{ padding-right:46px; }
+.pass-toggle{ position:absolute; right:5px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:var(--text-faint); transition:color .2s ease, background .2s ease; }
+.pass-toggle:hover{ color:var(--text-dim); background:var(--surface-2); }
+.pass-toggle:disabled{ opacity:.35; cursor:not-allowed; }
+.pass-toggle svg{ display:block; }
+
+/* ============ ONBOARDING ============ */
+.onb-shell{ max-width:640px; width:100%; text-align:center; }
+.onb-eyebrow{ font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-weight:700; margin-bottom:10px;}
+.onb-title{ font-size:30px; font-weight:800; margin-bottom:10px; }
+.onb-sub{ color:var(--text-dim); margin-bottom:34px; font-size:14.5px;}
+.opt-grid{ display:grid; gap:14px; }
+.opt-grid.two{ grid-template-columns:1fr 1fr; }
+.opt-card{
+  padding:22px; border-radius:18px; text-align:left; display:flex; align-items:center; gap:14px;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), border-color .3s ease, background .3s ease;
+}
+.opt-card:hover{ transform:translateY(-4px); border-color:var(--violet); }
+.opt-card .ic{ font-size:26px; width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--surface-2); flex-shrink:0;}
+.opt-card .lbl{ font-weight:700; font-size:15px; }
+.opt-card .sub{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+.progress-dots{ display:flex; gap:7px; justify-content:center; margin-bottom:30px; }
+.progress-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); transition:all .4s ease; }
+.progress-dots span.on{ background:var(--grad-1); width:22px; border-radius:5px; }
+
+/* ============ WELCOME ============ */
+.welcome-badge{ width:90px; height:90px; border-radius:26px; margin:0 auto 26px; background:var(--grad-1); display:flex; align-items:center; justify-content:center; font-size:40px; box-shadow:0 20px 44px -10px rgba(139,124,249,.55); animation: pop .7s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{ from{transform:scale(.4) rotate(-10deg); opacity:0;} to{transform:scale(1) rotate(0); opacity:1;} }
+
+/* ============ DASHBOARD / LEVELS ============ */
+.section-head{ display:flex; align-items:baseline; justify-content:space-between; margin:30px 0 14px; }
+.section-head h2{ font-size:18px; }
+.streak-row{ display:flex; gap:12px; margin-bottom:22px; flex-wrap:wrap;}
+.stat-chip{ flex:1; min-width:130px; padding:16px; border-radius:17px; }
+.stat-chip .num{ font-family:var(--font-d); font-size:22px; font-weight:800; }
+.stat-chip .lbl{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+.level-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+.level-card{ padding:20px 16px; border-radius:19px; position:relative; transition:transform .3s cubic-bezier(.34,1.56,.64,1), border-color .3s ease;}
+.level-card:not(.locked):hover{ transform:translateY(-5px); border-color:var(--teal); }
+.level-card .lvl-num{ font-family:var(--font-d); font-size:26px; font-weight:800; }
+.level-card .lvl-lbl{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+.level-card .ring{ position:absolute; top:14px; right:14px; width:30px; height:30px; }
+.level-card.locked{ opacity:.42; filter:grayscale(.6); cursor:not-allowed; }
+.level-card.done{ border-color: var(--teal); }
+
+.variant-list{ display:grid; gap:12px; }
+.variant-row{ display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:16px; transition:transform .25s ease, border-color .25s ease;}
+.variant-row:not(.locked):hover{ transform:translateX(4px); border-color:var(--violet); }
+.variant-row .vnum{ width:38px; height:38px; border-radius:11px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0;}
+.variant-row.done .vnum{ background:var(--grad-2); color:#08090c; }
+.variant-row .vinfo{ flex:1; }
+.variant-row .vtitle{ font-weight:700; font-size:14.5px; }
+.variant-row .vsub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+.variant-row.locked{ opacity:.4; cursor:not-allowed; }
+.pill-btn{ padding:9px 16px; border-radius:100px; font-size:12.5px; font-weight:700; background:var(--surface-2); border:1px solid var(--border); }
+.back-link{ display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--text-dim); margin-bottom:18px; font-weight:600; }
+.back-link:hover{ color:var(--text); }
+
+/* ============ QUIZ ============ */
+.quiz-shell{ max-width:640px; margin:0 auto; padding:26px 20px 40px; }
+.quiz-top{ display:flex; align-items:center; gap:14px; margin-bottom:26px;}
+.quiz-bar{ flex:1; height:9px; border-radius:100px; background:var(--surface-2); overflow:hidden; }
+.quiz-bar-fill{ height:100%; background:var(--grad-1); border-radius:100px; transition: width .5s cubic-bezier(.22,1,.36,1); }
+.quiz-x{ width:34px; height:34px; border-radius:10px; background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:15px; }
+.qcard{ padding:34px 28px; border-radius:24px; text-align:center; }
+.qcard .qword{ font-family:var(--font-d); font-size:30px; font-weight:800; margin-bottom:6px; }
+.qcard .qmeta{ font-size:12.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:26px; }
+.qopts{ display:grid; gap:12px; margin-top:26px; }
+.qopt{ padding:16px 18px; border-radius:15px; font-weight:700; font-size:14.5px; text-align:left; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+.qopt:not(.locked):hover{ border-color:var(--violet); transform:translateX(3px); }
+.qopt.correct{ background:rgba(43,217,201,.16); border-color:var(--teal); color:var(--teal); }
+.qopt.wrong{ background:rgba(255,110,110,.14); border-color:#ff6e6e; color:#ff8b8b; }
+.qopt.dim{ opacity:.4; }
+
+/* ============ RESULTS ============ */
+.result-shell{ max-width:480px; margin:0 auto; text-align:center; padding:40px 20px; }
+.result-ring{ width:150px; height:150px; margin:0 auto 22px; position:relative; }
+.result-ring svg{ transform:rotate(-90deg); }
+.result-ring .pct{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+.result-ring .pct b{ font-family:var(--font-d); font-size:30px; }
+.result-ring .pct span{ font-size:11px; color:var(--text-dim); }
+
+/* ============ PROFILE ============ */
+.profile-head{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:30px 20px; }
+.avatar{ width:96px; height:96px; border-radius:50%; background:var(--grad-1); display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:800; font-size:32px; color:#0a0b0f; box-shadow:0 16px 34px -10px rgba(139,124,249,.55); margin-bottom:16px; }
+.profile-name-edit{ display:flex; gap:8px; align-items:center; justify-content:center; margin-top:6px; }
+.stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:24px 0; }
+.stat-box{ padding:18px 10px; border-radius:17px; text-align:center; }
+.stat-box .n{ font-family:var(--font-d); font-size:22px; font-weight:800; }
+.stat-box .l{ font-size:11px; color:var(--text-dim); margin-top:3px; }
+.row-item{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-radius:15px; margin-bottom:10px; }
+.row-item .rl{ font-size:14px; font-weight:600; }
+
+/* ============ TOGGLE SWITCH (dark/light) ============ */
+.toggle-switch{ width:64px; height:34px; border-radius:100px; position:relative; padding:3px; background:linear-gradient(145deg, var(--bg-3), var(--bg-2)); box-shadow: inset 0 2px 6px rgba(0,0,0,.35), inset 0 -1px 1px rgba(255,255,255,.04); border:1px solid var(--border); }
+html.light .toggle-switch{ box-shadow: inset 0 2px 5px rgba(30,34,50,.18); }
+.toggle-knob{ width:26px; height:26px; border-radius:50%; background:linear-gradient(160deg,#fff,#d9dbe4); box-shadow:0 4px 10px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.5) inset; display:flex; align-items:center; justify-content:center; font-size:13px; transition: transform .45s cubic-bezier(.34,1.56,.64,1); }
+.toggle-switch.on .toggle-knob{ transform:translateX(30px); background:linear-gradient(160deg,#4a4560,#232336); box-shadow:0 4px 14px rgba(139,124,249,.5), 0 0 0 1px rgba(139,124,249,.4) inset; }
+
+/* ============ SEGMENTED (ui lang) ============ */
+.segmented{ display:flex; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:4px; gap:4px; }
+.seg-opt{ flex:1; text-align:center; padding:10px 6px; border-radius:11px; font-size:12.5px; font-weight:700; color:var(--text-dim); transition:all .3s ease;}
+.seg-opt.active{ background:var(--grad-1); color:#0a0b0f; }
+
+/* ============ BOTTOM NAV (glass liquid) ============ */
+.bottom-nav-wrap{ position:fixed; bottom:22px; left:0; right:0; display:flex; justify-content:center; z-index:50; pointer-events:none; }
+.bottom-nav{
+  pointer-events:auto; position:relative; display:flex; gap:4px; padding:8px; border-radius:26px;
+  background:var(--surface-2); backdrop-filter:blur(24px) saturate(160%); -webkit-backdrop-filter:blur(24px) saturate(160%);
+  border:1px solid var(--border); box-shadow:var(--shadow-lg);
+}
+.nav-blob{
+  position:absolute; top:8px; bottom:8px; width:64px; border-radius:20px; background:var(--grad-1);
+  box-shadow:0 10px 26px -6px rgba(139,124,249,.65);
+  transition: transform .55s cubic-bezier(.16,1.4,.3,1), width .35s cubic-bezier(.16,1.4,.3,1), border-radius .35s ease;
+  z-index:0;
+}
+.nav-item{ position:relative; z-index:1; width:64px; height:52px; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.nav-item:active{ transform:scale(.88); }
+.nav-item .ic{ font-size:19px; transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+.nav-item.active .ic{ transform:translateY(-1px) scale(1.08); }
+.nav-item .t{ font-size:9.5px; font-weight:700; color:var(--text-faint); }
+.nav-item.active .t{ color:#0a0b0f; }
+.nav-item.active .ic{ filter:none; }
+.nav-item:not(.active) .t{ color: var(--text-dim); }
+
+/* ============ TOAST ============ */
+.toast{ position:fixed; top:22px; left:50%; transform:translateX(-50%) translateY(-30px); z-index:100; padding:13px 22px; border-radius:14px; font-weight:700; font-size:13.5px; opacity:0; transition: all .45s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============ LAMP-GATED FIELDS ============ */
+.field input:disabled{ opacity:.38; cursor:not-allowed; }
+.btn:disabled{ opacity:.4; cursor:not-allowed; filter:grayscale(.3); }
+.btn:disabled:hover{ transform:none; }
+.lamp-gate-hint{ font-size:12.5px; font-weight:700; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.lamp-side:not(.lit) .cord-pull circle{ animation: cordPulse 1.7s ease-in-out infinite; }
+@keyframes cordPulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+
+/* ============ QUESTION TYPE BADGE ============ */
+.qtype-badge{ display:inline-flex; align-items:center; gap:6px; padding:6px 13px; border-radius:100px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:16px; background:var(--surface-2); color:var(--text-dim); }
+.qcard{ border-top:3px solid var(--accent, var(--violet)); transition:border-color .3s ease; }
+.type-translate{ --accent:var(--violet); } .type-translate .qtype-badge{ background:rgba(139,124,249,.16); color:var(--violet); }
+.type-fillblank{ --accent:var(--teal); } .type-fillblank .qtype-badge{ background:rgba(43,217,201,.16); color:var(--teal); }
+.type-grammar{ --accent:var(--gold); } .type-grammar .qtype-badge{ background:rgba(233,194,124,.18); color:var(--gold); }
+.type-synonym{ --accent:#7ed9a0; } .type-synonym .qtype-badge{ background:rgba(126,217,160,.16); color:#7ed9a0; }
+.type-antonym{ --accent:#ff9d7a; } .type-antonym .qtype-badge{ background:rgba(255,157,122,.16); color:#ff9d7a; }
+.type-order{ --accent:#7ca8ff; } .type-order .qtype-badge{ background:rgba(124,168,255,.16); color:#7ca8ff; }
+
+/* ============ LIBRARY ============ */
+.lib-search{ width:100%; padding:14px 16px; border-radius:14px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:14.5px; outline:none; margin:2px 0 16px; transition:border .25s ease, box-shadow .25s ease; }
+.lib-search:focus{ border-color:var(--violet); box-shadow:0 0 0 4px rgba(139,124,249,.18); }
+.lib-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 18px; border-radius:15px; margin-bottom:9px; }
+.lib-row .lw{ font-weight:800; font-size:14.5px; flex-shrink:0; }
+.lib-row .lt{ font-size:12px; color:var(--text-dim); text-align:right; line-height:1.55; }
+.lib-empty{ text-align:center; padding:40px 16px; color:var(--text-dim); font-size:13.5px; }
+
+/* ============ ADMIN ============ */
+.admin-row{ display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:16px; margin-bottom:9px; }
+.admin-row .arank{ width:30px; height:30px; border-radius:10px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px; flex-shrink:0; }
+.admin-row.rank-1 .arank{ background:linear-gradient(135deg,#f0d59a,#e0af5a); color:#241a05; }
+.admin-row.rank-2 .arank{ background:linear-gradient(135deg,#d8dde6,#a8afbc); color:#161922; }
+.admin-row.rank-3 .arank{ background:linear-gradient(135deg,#d8a06a,#9c6a3f); color:#221204; }
+.admin-row .ainfo{ flex:1; min-width:0; }
+.admin-row .aname{ font-weight:700; font-size:14px; }
+.admin-row .ameta{ font-size:11.5px; color:var(--text-dim); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-row .axp{ font-family:var(--font-d); font-weight:800; font-size:16px; color:var(--teal); flex-shrink:0; text-align:right; }
+.admin-row .axp span{ display:block; font-family:var(--font-b); font-weight:600; font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 760px){
+  .auth-wrap{ grid-template-columns:1fr; }
+  .lamp-side{ min-height:220px; padding:20px 0; }
+  .lamp-svg{ width:120px; }
+  .form-side{ padding:34px 24px; }
+  .opt-grid.two{ grid-template-columns:1fr; }
+  .stat-grid{ grid-template-columns:repeat(3,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="grain"></div>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ======================================================================
+   ZabonOmuz — premium language-learning demo
+   Vanilla HTML/CSS/JS single-file app. In-memory state only (session-based
+   per artifact constraints — no browser storage is used).
+====================================================================== */
+
+/* ---------- i18n ---------- */
+const I18N = {
+  tj:{ appName:'ZabonOmuz', login:'Воридшавӣ', register:'Сабти ном', name:'Ном', surname:'Насаб', email:'Email',
+    password:'Парол', signIn:'Ворид шав', createAcc:'Сохтани ҳисоб', pullLamp:'Занҷирро кашед / пахш кунед',
+    lampHint:'Барои фурӯзон/хомӯш кардани чароғ', chooseLang:'Кадом забонро мехоҳед омӯзед?',
+    english:'Забони англисӣ', russian:'Забони русӣ', continue:'Идома', level:'Сатҳи шумо чӣ гуна аст?',
+    novice:'Навомӯз', novDesc:'Аз ҳарф ва калимаҳои содда сар мекунем', mid:'Миёна', midDesc:'Асосҳоро медонам, мехоҳам такмил диҳам',
+    pro:'Профессионал', proDesc:'Дониши хуб дорам, санҷиш кунед', ref:'Шумо аз куҷо бо ZabonOmuz шинос шудед?',
+    welcome:'Хуш омадед ба', start:'Оғоз кардан', dashboard:'Асосӣ', profile:'Профил', settings:'Танзимот',
+    levelsTitle:'Сатҳҳо', variantsOf:'Вариантҳои сатҳи', locked:'Қулф', question:'савол', xp:'XP',
+    correct:'Дуруст', wrong:'Хато', totalXp:'XP умумӣ', editName:'Таҳрир', save:'Нигоҳ доштан',
+    darkMode:'Реҷаи торик', interfaceLang:'Забони интерфейс', logout:'Баромадан', tryAgain:'Дубора кӯшиш кунед',
+    passed:'Гузаштед!', nextVariant:'Варианти навбатӣ кушода шуд', nextLevel:'Сатҳи навбатӣ кушода шуд',
+    resultsTitle:'Натиҷаи тест', backHome:'Ба саҳифаи асосӣ', keepGoing:'Идома диҳед', close:'Пӯшидан',
+    variant:'Вариант', questionsOf:'аз 25 савол', myAccount:'Ҳисоби ман', accountInfo:'Маълумоти ҳисоб',
+    changeAvatar:'Ранги аватарро иваз кунед', selectOption:'Интихоб кунед', errFill:'Лутфан ҳамаро пур кунед',
+    errEmail:'Email нодуруст аст', welcomeSub:'Ҳамаи чиз омода аст. Биёед аз сатҳи 1 сар кунем.',
+    startBtn:'Огоз', variantLockedMsg:'Аввал варианти пешинро гузаред', levelLockedMsg:'Аввал сатҳи пешинро тамом кунед',
+    referral_ig:'Instagram', referral_tg:'Telegram', referral_friend:'Аз дӯстон', referral_google:'Google',
+    referral_other:'Дигар', greetingName:'Салом', questionOfN:'Саволи', xpEarned:'XP гирифта шуд',
+    errEmailTaken:'Ин email аллакай сабти ном шудааст. Лутфан ворид шавед (Log in).',
+    errNoAccount:'Ҳисоб бо ин email ёфт нашуд. Аввал сабти ном кунед.',
+    errBadLogin:'Email ё парол нодуруст аст.', welcomeBack:'Хуш омадед бозгашт',
+    changePhoto:'Иваз кардани сурат', uploading:'Бор карда мешавад…',
+    demoNote:'Маълумоти шумо дар сервери воқеӣ (Supabase) нигоҳ дошта мешавад ва аз ҳар дастгоҳ дастрас аст.',
+    library:'Китобхона', libSearchPh:'Калимаро ҷустуҷӯ кунед…', libNoResults:'Ҳеҷ калима ёфт нашуд',
+    qtypeTranslate:'Тарҷума', qtypeFillblank:'Ҷои холиро пур кунед', qtypeGrammar:'Грамматика',
+    qtypeSynonym:'Синоним ёбед', qtypeAntonym:'Антоним ёбед', qtypeOrder:'Тартиби дуруст',
+    lampRequired:'Аввал чароғро равшан кунед', adminTitle:'Панели админ', adminTotalUsers:'Истифодабарандагон',
+    adminRefresh:'Навсозӣ', periodDay:'Рӯзона', periodWeek:'Ҳафтаина', periodMonth:'Моҳона', periodAll:'Умумӣ',
+    adminNoUsers:'Ҳанӯз касе сабти ном накардааст', adminRegisteredOn:'Сабти ном',
+    forgotPassword:'Парол фаромӯш шуд?', resetTitle:'Барқарорсозии парол',
+    resetSub:'Email-и худро нависед — ба он паём бо суроғаи барқарорсозӣ мефиристем.',
+    resetSend:'Фиристодани паём', resetSent:'Паём фиристода шуд! Электрон почтаи худро тафтиш кунед.',
+    backToLogin:'Бозгашт ба воридшавӣ', rating:'Рейтинг', ratingTitle:'Рейтинги омӯзандагон',
+    ratingSub:'Ҷои шумо дар байни ҳамаи омӯзандагон', you:'Шумо', ratingEmpty:'Ҳанӯз рейтинг холӣ аст',
+    catAll:'Ҳама', catHome:'Хона ва рӯзгор', catFamily:'Оила ва одамон', catNature:'Табиат',
+    catFood:'Хӯрок ва нӯшокӣ', catTime:'Вақт', catSchool:'Мактаб ва забон', catShopping:'Бозор ва пул',
+    catClothing:'Либос', catColors:'Рангҳо', catQualities:'Сифатҳо', catVerbs:'Феълҳо',
+    catEmotions:'Ҳиссиёт', catWork:'Кор ва тиҷорат', catSociety:'Ҷамъият ва сиёсат', catHealth:'Тандурустӣ',
+    catEducation:'Таҳсил ва дониш', catRelations:'Муносибатҳо', catIdeas:'Афкор ва мафҳумҳо',
+    catScience:'Илм ва таҳлил', catOther:'Дигар',
+    newPasswordTitle:'Гузоштани пароли нав', newPasswordSub:'Пароли навро нависед.',
+    newPasswordSave:'Нигоҳ доштани парол', newPasswordSuccess:'Парол иваз шуд! Ҳоло ворид шавед.',
+    showPassword:'Нишон додани парол', hidePassword:'Пинҳон кардани парол',
+    soundEffects:'Садои тугмаҳо', changePassword:'Иваз кардани парол',
+    errPassMin:'Парол бояд ҳадди ақал 6 аломат дошта бошад',
+    passChangedOk:'Парол бо муваффақият иваз шуд.',
+    checkEmailConfirm:'Лутфан email-ро тасдиқ кунед, баъд ворид шавед.'
+  },
+  ru:{ appName:'ZabonOmuz', login:'Вход', register:'Регистрация', name:'Имя', surname:'Фамилия', email:'Email',
+    password:'Пароль', signIn:'Войти', createAcc:'Создать аккаунт', pullLamp:'Потяните / нажмите шнур',
+    lampHint:'Включить/выключить лампу', chooseLang:'Какой язык хотите учить?', english:'Английский', russian:'Русский',
+    continue:'Далее', level:'Какой у вас уровень?', novice:'Новичок', novDesc:'Начнём с простых слов и букв',
+    mid:'Средний', midDesc:'Знаю основы, хочу улучшить', pro:'Профессионал', proDesc:'Хорошие знания, проверьте меня',
+    ref:'Откуда вы узнали о ZabonOmuz?', welcome:'Добро пожаловать в', start:'Начать', dashboard:'Главная',
+    profile:'Профиль', settings:'Настройки', levelsTitle:'Уровни', variantsOf:'Варианты уровня',
+    locked:'Закрыто', question:'вопрос', xp:'XP', correct:'Верно', wrong:'Ошибка', totalXp:'Всего XP',
+    editName:'Изменить', save:'Сохранить', darkMode:'Тёмный режим', interfaceLang:'Язык интерфейса',
+    logout:'Выйти', tryAgain:'Попробовать снова', passed:'Пройдено!', nextVariant:'Открыт новый вариант',
+    nextLevel:'Открыт новый уровень', resultsTitle:'Результат теста', backHome:'На главную', keepGoing:'Продолжить',
+    close:'Закрыть', variant:'Вариант', questionsOf:'из 25 вопросов', myAccount:'Мой аккаунт', accountInfo:'Информация об аккаунте',
+    changeAvatar:'Сменить цвет аватара', selectOption:'Выберите', errFill:'Заполните все поля', errEmail:'Неверный email',
+    welcomeSub:'Всё готово. Начнём с уровня 1.', startBtn:'Начать', variantLockedMsg:'Сначала пройдите предыдущий вариант',
+    levelLockedMsg:'Сначала завершите предыдущий уровень', referral_ig:'Instagram', referral_tg:'Telegram',
+    referral_friend:'От друзей', referral_google:'Google', referral_other:'Другое', greetingName:'Привет',
+    questionOfN:'Вопрос', xpEarned:'XP получено',
+    errEmailTaken:'Этот email уже зарегистрирован. Пожалуйста, войдите (Log in).',
+    errNoAccount:'Аккаунт с этим email не найден. Сначала зарегистрируйтесь.',
+    errBadLogin:'Неверный email или пароль.', welcomeBack:'С возвращением',
+    changePhoto:'Сменить фото', uploading:'Загрузка…',
+    demoNote:'Ваши данные хранятся на настоящем сервере (Supabase) и доступны с любого устройства.',
+    library:'Библиотека', libSearchPh:'Найти слово…', libNoResults:'Слово не найдено',
+    qtypeTranslate:'Перевод', qtypeFillblank:'Заполните пропуск', qtypeGrammar:'Грамматика',
+    qtypeSynonym:'Найдите синоним', qtypeAntonym:'Найдите антоним', qtypeOrder:'Правильный порядок',
+    lampRequired:'Сначала включите лампу', adminTitle:'Панель администратора', adminTotalUsers:'Пользователи',
+    adminRefresh:'Обновить', periodDay:'За сутки', periodWeek:'За неделю', periodMonth:'За месяц', periodAll:'Всего',
+    adminNoUsers:'Пока никто не зарегистрирован', adminRegisteredOn:'Регистрация',
+    showPassword:'Показать пароль', hidePassword:'Скрыть пароль',
+    soundEffects:'Звук кнопок', changePassword:'Изменить пароль',
+    errPassMin:'Пароль должен содержать минимум 6 символов',
+    passChangedOk:'Пароль успешно изменён.',
+    checkEmailConfirm:'Пожалуйста, подтвердите email, затем войдите.',
+    forgotPassword:'Забыли пароль?', resetTitle:'Восстановление пароля',
+    resetSub:'Введите свой email — мы отправим на него ссылку для сброса пароля.',
+    resetSend:'Отправить письмо', resetSent:'Письмо отправлено! Проверьте свою почту.',
+    backToLogin:'Назад ко входу', rating:'Рейтинг', ratingTitle:'Рейтинг учащихся',
+    ratingSub:'Ваше место среди всех учащихся', you:'Вы', ratingEmpty:'Рейтинг пока пуст',
+    catAll:'Все', catHome:'Дом и быт', catFamily:'Семья и люди', catNature:'Природа',
+    catFood:'Еда и напитки', catTime:'Время', catSchool:'Школа и язык', catShopping:'Рынок и деньги',
+    catClothing:'Одежда', catColors:'Цвета', catQualities:'Качества', catVerbs:'Глаголы',
+    catEmotions:'Эмоции', catWork:'Работа и бизнес', catSociety:'Общество и политика', catHealth:'Здоровье',
+    catEducation:'Образование и знания', catRelations:'Отношения', catIdeas:'Идеи и понятия',
+    catScience:'Наука и анализ', catOther:'Другое',
+    newPasswordTitle:'Новый пароль', newPasswordSub:'Введите новый пароль.',
+    newPasswordSave:'Сохранить пароль', newPasswordSuccess:'Пароль изменён! Теперь войдите.'
+  },
+  en:{ appName:'ZabonOmuz', login:'Log in', register:'Sign up', name:'First name', surname:'Last name', email:'Email',
+    password:'Password', signIn:'Sign in', createAcc:'Create account', pullLamp:'Pull / tap the cord',
+    lampHint:'Turn the lamp on / off', chooseLang:'Which language do you want to learn?', english:'English',
+    russian:'Russian', continue:'Continue', level:'What is your level?', novice:'Beginner',
+    novDesc:'Start from simple words and letters', mid:'Intermediate', midDesc:'I know the basics, want to improve',
+    pro:'Advanced', proDesc:'Good knowledge, test me', ref:'How did you hear about ZabonOmuz?',
+    welcome:'Welcome to', start:'Get started', dashboard:'Home', profile:'Profile', settings:'Settings',
+    levelsTitle:'Levels', variantsOf:'Variants of level', locked:'Locked', question:'question', xp:'XP',
+    correct:'Correct', wrong:'Wrong', totalXp:'Total XP', editName:'Edit', save:'Save', darkMode:'Dark mode',
+    interfaceLang:'Interface language', logout:'Log out', tryAgain:'Try again', passed:'Passed!',
+    nextVariant:'New variant unlocked', nextLevel:'New level unlocked', resultsTitle:'Quiz result',
+    backHome:'Back to home', keepGoing:'Keep going', close:'Close', variant:'Variant', questionsOf:'of 25 questions',
+    myAccount:'My account', accountInfo:'Account info', changeAvatar:'Change avatar color', selectOption:'Select',
+    errFill:'Please fill in every field', errEmail:'Invalid email', welcomeSub:"Everything's ready. Let's start at level 1.",
+    startBtn:'Start', variantLockedMsg:'Finish the previous variant first', levelLockedMsg:'Finish the previous level first',
+    referral_ig:'Instagram', referral_tg:'Telegram', referral_friend:'From friends', referral_google:'Google',
+    referral_other:'Other', greetingName:'Hi', questionOfN:'Question', xpEarned:'XP earned',
+    errEmailTaken:'This email is already registered. Please log in instead.',
+    errNoAccount:'No account found for this email. Please sign up first.',
+    errBadLogin:'Incorrect email or password.', welcomeBack:'Welcome back',
+    changePhoto:'Change photo', uploading:'Uploading…',
+    demoNote:'Your data is stored on a real server (Supabase) and is available from any device.',
+    library:'Library', libSearchPh:'Search a word…', libNoResults:'No matching words',
+    qtypeTranslate:'Translate', qtypeFillblank:'Fill the blank', qtypeGrammar:'Grammar',
+    qtypeSynonym:'Find the synonym', qtypeAntonym:'Find the antonym', qtypeOrder:'Correct order',
+    lampRequired:'Turn on the lamp first', adminTitle:'Admin panel', adminTotalUsers:'Users',
+    adminRefresh:'Refresh', periodDay:'Daily', periodWeek:'Weekly', periodMonth:'Monthly', periodAll:'All-time',
+    adminNoUsers:'No one has registered yet', adminRegisteredOn:'Registered',
+    showPassword:'Show password', hidePassword:'Hide password',
+    soundEffects:'Button sounds', changePassword:'Change password',
+    errPassMin:'Password must be at least 6 characters',
+    passChangedOk:'Password changed successfully.',
+    checkEmailConfirm:'Please confirm your email, then log in.',
+    forgotPassword:'Forgot password?', resetTitle:'Reset your password',
+    resetSub:"Enter your email — we'll send a reset link to it.",
+    resetSend:'Send reset link', resetSent:'Email sent! Check your inbox.',
+    backToLogin:'Back to log in', rating:'Rating', ratingTitle:'Learner rating',
+    ratingSub:'Your place among all learners', you:'You', ratingEmpty:'The rating is empty for now',
+    catAll:'All', catHome:'Home & household', catFamily:'Family & people', catNature:'Nature',
+    catFood:'Food & drink', catTime:'Time', catSchool:'School & language', catShopping:'Market & money',
+    catClothing:'Clothing', catColors:'Colors', catQualities:'Qualities', catVerbs:'Verbs',
+    catEmotions:'Emotions', catWork:'Work & business', catSociety:'Society & politics', catHealth:'Health',
+    catEducation:'Education & knowledge', catRelations:'Relationships', catIdeas:'Ideas & concepts',
+    catScience:'Science & analysis', catOther:'Other',
+    newPasswordTitle:'Set a new password', newPasswordSub:'Enter your new password.',
+    newPasswordSave:'Save password', newPasswordSuccess:'Password changed! Please log in.'
+  }
+};
+function t(k){ return (I18N[S.uiLang] && I18N[S.uiLang][k]) || I18N.tj[k] || k; }
+
+/* ---------- WORD BANK + PROCEDURAL 25,000-QUESTION ENGINE ---------- */
+/* ---------- WORD BANKS (tj, en, ru) — tier a=1-30, b=31-70, c=71-100 ---------- */
+const WORDS = {
+ a:[
+  ['китоб','book','книга'],['об','water','вода'],['хона','house','дом'],['мактаб','school','школа'],
+  ['гурба','cat','кошка'],['саг','dog','собака'],['дӯст','friend','друг'],['модар','mother','мама'],
+  ['падар','father','папа'],['офтоб','sun','солнце'],['моҳ','moon','луна'],['осмон','sky','небо'],
+  ['нон','bread','хлеб'],['себ','apple','яблоко'],['шаҳр','city','город'],['деҳа','village','деревня'],
+  ['кӯча','street','улица'],['дарахт','tree','дерево'],['гул','flower','цветок'],['барф','snow','снег'],
+  ['борон','rain','дождь'],['бод','wind','ветер'],['замин','ground','земля'],['шарбат','juice','сок'],
+  ['чой','tea','чай'],['шир','milk','молоко'],['гӯшт','meat','мясо'],['биринҷ','rice','рис'],
+  ['картошка','potato','картофель'],['пиёз','onion','лук'],['сабзӣ','carrot','морковь'],['мошин','car','машина'],
+  ['роҳ','road','дорога'],['дар','door','дверь'],['тиреза','window','окно'],['миз','table','стол'],
+  ['курсӣ','chair','стул'],['кат','bed','кровать'],['рӯз','day','день'],['шаб','night','ночь'],
+  ['субҳ','morning','утро'],['бегоҳ','evening','вечер'],['сол','year','год'],['ҳафта','week','неделя'],
+  ['китобхона','library','библиотека'],['муаллим','teacher','учитель'],['хонанда','pupil','ученик'],
+  ['дафтар','notebook','тетрадь'],['қалам','pen','ручка'],['коғаз','paper','бумага'],['хат','letter','письмо'],
+  ['забон','language','язык'],['сухан','speech','речь'],['калима','word','слово'],['ҷумла','sentence','предложение'],
+  ['бозор','market','рынок'],['дӯкон','shop','магазин'],['пул','money','деньги'],['нарх','price','цена'],
+  ['либос','clothes','одежда'],['пироҳан','shirt','рубашка'],['шим','trousers','брюки'],['пойафзол','shoes','обувь'],
+  ['кулоҳ','hat','шапка'],['ранг','color','цвет'],['сурх','red','красный'],['сабз','green','зелёный'],
+  ['кабуд','blue','синий'],['сафед','white','белый'],['сиёҳ','black','чёрный'],['зард','yellow','жёлтый'],
+  ['калон','big','большой'],['хурд','small','маленький'],['нав','new','новый'],['кӯҳна','old','старый'],
+  ['хуб','good','хороший'],['бад','bad','плохой'],['гарм','warm','тёплый'],['хунук','cold','холодный'],
+  ['баланд','tall','высокий'],['паст','low','низкий'],['тез','fast','быстрый'],['суст','slow','медленный'],
+  ['хондан','to read','читать'],['навиштан','to write','писать'],['гуфтан','to say','говорить'],
+  ['рафтан','to go','идти'],['омадан','to come','приходить'],['хӯрдан','to eat','есть']
+ ],
+ b:[
+  ['ноумедшавӣ','disappointment','разочарование'],['мулоқот','meeting','встреча'],['музокира','negotiation','переговоры'],
+  ['равшанфикр','open-minded','открытый'],['саёҳат','journey','путешествие'],['бунёд кардан','to establish','основать'],
+  ['қарордод','agreement','договор'],['мустақил','independent','независимый'],['таҷриба','experience','опыт'],
+  ['муваффақият','success','успех'],['масъулият','responsibility','ответственность'],['ҳамкорӣ','cooperation','сотрудничество'],
+  ['стратегия','strategy','стратегия'],['мушкилот','difficulty','трудность'],['фарҳанг','culture','культура'],
+  ['иқтисод','economy','экономика'],['сиёсат','politics','политика'],['ҷамъият','society','общество'],
+  ['иттилоот','information','информация'],['технология','technology','технология'],['муҳити зист','environment','окружающая среда'],
+  ['солимӣ','health','здоровье'],['бемор','patient','больной'],['табобат','treatment','лечение'],
+  ['духтур','doctor','врач'],['донишгоҳ','university','университет'],['таҳсил','education','образование'],
+  ['дониш','knowledge','знание'],['малака','skill','навык'],['касб','profession','профессия'],
+  ['корманд','employee','сотрудник'],['роҳбар','leader','руководитель'],['ширкат','company','компания'],
+  ['савдо','trade','торговля'],['фоида','profit','выгода'],['зарар','loss','убыток'],
+  ['хароҷот','expenses','расходы'],['буҷет','budget','бюджет'],['андоза','size','размер'],
+  ['сифат','quality','качество'],['миқдор','quantity','количество'],['натиҷа','result','результат'],
+  ['сабаб','reason','причина'],['мақсад','goal','цель'],['нақша','plan','план'],
+  ['қарор','decision','решение'],['имконият','opportunity','возможность'],['хатар','risk','риск'],
+  ['амният','security','безопасность'],['озодӣ','freedom','свобода'],['ҳуқуқ','right','право'],
+  ['қонун','law','закон'],['адолат','justice','справедливость'],['баробарӣ','equality','равенство'],
+  ['эҳтиром','respect','уважение'],['эътимод','trust','доверие'],['садоқат','loyalty','верность'],
+  ['умед','hope','надежда'],['хушбахтӣ','happiness','счастье'],['ғам','sadness','грусть'],
+  ['хашм','anger','гнев'],['тарс','fear','страх'],['ҳайрат','surprise','удивление'],
+  ['шодӣ','joy','радость'],['орзу','dream','мечта'],['хотира','memory','воспоминание'],
+  ['тасаввур','imagination','воображение'],['идея','idea','идея'],['назария','theory','теория'],
+  ['амалия','practice','практика'],['усул','method','метод'],['таҳлил','analysis','анализ'],
+  ['арзёбӣ','evaluation','оценка'],['пешрафт','progress','прогресс'],['рушд','development','развитие'],
+  ['тағйирот','change','изменение'],['муносибат','relationship','отношение'],['гуфтугӯ','conversation','разговор'],
+  ['баҳс','debate','спор'],['созиш','compromise','компромисс'],['ҳамдигарфаҳмӣ','mutual understanding','взаимопонимание'],
+  ['масъала','issue','проблема'],['ҳал','solution','решение'],['фурсат','chance','шанс'],
+  ['масофа','distance','расстояние'],['муддат','duration','срок'],['давра','period','период'],
+  ['марҳила','stage','этап'],['нақл','narration','рассказ']
+ ],
+ c:[
+  ['мулоҳизакорона','deliberately','обдуманно'],['ниҳоят','ultimately','в конечном счёте'],
+  ['мутаносиб','proportionate','пропорциональный'],['мушаххас кардан','to specify','уточнить'],
+  ['беэътиноӣ','negligence','халатность'],['фарзия','hypothesis','гипотеза'],['ислоҳот','reform','реформа'],
+  ['пешбинишаванда','predictable','предсказуемый'],['вобастагӣ','dependency','зависимость'],
+  ['афзалиятнок','preferable','предпочтительный'],['ҳамгироӣ','integration','интеграция'],
+  ['инъикос кардан','to reflect','отражать'],['ғайримустақим','indirect','косвенный'],
+  ['мушоҳида кардан','to observe','наблюдать'],['зиддият','contradiction','противоречие'],
+  ['мафҳум','concept','понятие'],['моҳият','essence','сущность'],['назорат','control','контроль'],
+  ['маъмурият','administration','администрация'],['салоҳият','competence','компетенция'],
+  ['ваколат','authority','полномочие'],['ҳисоботдиҳӣ','accountability','отчётность'],
+  ['шаффофият','transparency','прозрачность'],['таносуб','ratio','соотношение'],
+  ['тахмин','assumption','предположение'],['далел','evidence','доказательство'],
+  ['хулоса','conclusion','вывод'],['муқоиса','comparison','сравнение'],['фарқият','difference','различие'],
+  ['монандӣ','similarity','сходство'],['тағйирёбанда','variable','переменная'],['собит','constant','постоянный'],
+  ['муваққатӣ','temporary','временный'],['доимӣ','permanent','постоянный'],['воқеӣ','real','реальный'],
+  ['назариявӣ','theoretical','теоретический'],['амалӣ','practical','практический'],
+  ['объективӣ','objective','объективный'],['субъективӣ','subjective','субъективный'],
+  ['мутлақ','absolute','абсолютный'],['нисбӣ','relative','относительный'],['возеҳ','clear','ясный'],
+  ['норавшан','vague','неясный'],['муайян','definite','определённый'],['номуайян','uncertain','неопределённый'],
+  ['эҳтимол','probability','вероятность'],['тасодуф','coincidence','случайность'],
+  ['қонунмандӣ','regularity','закономерность'],['истисно','exception','исключение'],
+  ['қоида','rule','правило'],['меъёр','norm','норма'],['стандарт','standard','стандарт'],
+  ['талабот','requirement','требование'],['шарт','condition','условие'],['маҳдудият','limitation','ограничение'],
+  ['имтиёз','privilege','привилегия'],['бартарӣ','advantage','преимущество'],['нуқсон','flaw','недостаток'],
+  ['хатогӣ','mistake','ошибка'],['ислоҳ','correction','исправление'],['такмил','improvement','усовершенствование'],
+  ['навоварӣ','innovation','инновация'],['ихтироъ','invention','изобретение'],['кашфиёт','discovery','открытие'],
+  ['таҳқиқот','research','исследование'],['усулшиносӣ','methodology','методология'],
+  ['таснифот','classification','классификация'],['гурӯҳбандӣ','grouping','группировка'],
+  ['ҷамъбаст','summary','обобщение'],['тафсир','interpretation','толкование'],['маъно','meaning','смысл'],
+  ['мундариҷа','content','содержание'],['сохтор','structure','структура'],['системавӣ','systematic','системный'],
+  ['равиш','approach','подход'],['механизм','mechanism','механизм'],['омил','factor','фактор'],
+  ['таъсир','influence','влияние'],['натиҷабахш','effective','эффективный'],['самаранок','efficient','результативный'],
+  ['иловагӣ','additional','дополнительный'],['асосӣ','main','основной'],['дуюмдараҷа','secondary','второстепенный'],
+  ['муҳим','important','важный'],['ночиз','insignificant','незначительный'],['зарурӣ','necessary','необходимый'],
+  ['мувофиқ','appropriate','соответствующий'],['номувофиқ','inappropriate','несоответствующий']
+ ]
+};
+
+/* ---------- LIBRARY CATEGORIES ----------
+   The quiz engine indexes WORDS[tier] positionally (see decodeCombo/buildQuestion),
+   so the tier arrays above must never be reordered or restructured. Instead, the
+   Library screen groups the very same words by everyday topic via this lookup —
+   e.g. all "home" words together, all "fruit/food" words together, etc. */
+const CAT_ORDER = ['home','family','nature','food','time','school','shopping','clothing','colors',
+  'qualities','verbs','emotions','work','society','health','education','relations','ideas','science','other'];
+const CAT_KEY = { home:'catHome', family:'catFamily', nature:'catNature', food:'catFood', time:'catTime',
+  school:'catSchool', shopping:'catShopping', clothing:'catClothing', colors:'catColors', qualities:'catQualities',
+  verbs:'catVerbs', emotions:'catEmotions', work:'catWork', society:'catSociety', health:'catHealth',
+  education:'catEducation', relations:'catRelations', ideas:'catIdeas', science:'catScience', other:'catOther' };
+const WORD_CAT = {
+  // tier a — everyday concrete vocabulary
+  'китоб':'school','об':'food','хона':'home','мактаб':'school','гурба':'family','саг':'family','дӯст':'family',
+  'модар':'family','падар':'family','офтоб':'nature','моҳ':'nature','осмон':'nature','нон':'food','себ':'food',
+  'шаҳр':'nature','деҳа':'nature','кӯча':'nature','дарахт':'nature','гул':'nature','барф':'nature','борон':'nature',
+  'бод':'nature','замин':'nature','шарбат':'food','чой':'food','шир':'food','гӯшт':'food','биринҷ':'food',
+  'картошка':'food','пиёз':'food','сабзӣ':'food','мошин':'home','роҳ':'nature','дар':'home','тиреза':'home',
+  'миз':'home','курсӣ':'home','кат':'home','рӯз':'time','шаб':'time','субҳ':'time','бегоҳ':'time','сол':'time',
+  'ҳафта':'time','китобхона':'school','муаллим':'family','хонанда':'family','дафтар':'school','қалам':'school',
+  'коғаз':'school','хат':'school','забон':'school','сухан':'school','калима':'school','ҷумла':'school',
+  'бозор':'shopping','дӯкон':'shopping','пул':'shopping','нарх':'shopping','либос':'clothing','пироҳан':'clothing',
+  'шим':'clothing','пойафзол':'clothing','кулоҳ':'clothing','ранг':'colors','сурх':'colors','сабз':'colors',
+  'кабуд':'colors','сафед':'colors','сиёҳ':'colors','зард':'colors','калон':'qualities','хурд':'qualities',
+  'нав':'qualities','кӯҳна':'qualities','хуб':'qualities','бад':'qualities','гарм':'qualities','хунук':'qualities',
+  'баланд':'qualities','паст':'qualities','тез':'qualities','суст':'qualities','хондан':'verbs','навиштан':'verbs',
+  'гуфтан':'verbs','рафтан':'verbs','омадан':'verbs','хӯрдан':'verbs',
+  // tier b — everyday abstract / social / work vocabulary
+  'ноумедшавӣ':'emotions','мулоқот':'work','музокира':'work','равшанфикр':'qualities','саёҳат':'other',
+  'саёҳат':'nature','бунёд кардан':'work','қарордод':'work','мустақил':'qualities','таҷриба':'work','муваффақият':'work',
+  'масъулият':'work','ҳамкорӣ':'work','стратегия':'work','мушкилот':'ideas','фарҳанг':'society',
+  'иқтисод':'society','сиёсат':'society','ҷамъият':'society','иттилоот':'science','технология':'science',
+  'муҳити зист':'nature','солимӣ':'health','бемор':'health','табобат':'health','духтур':'health',
+  'донишгоҳ':'education','таҳсил':'education','дониш':'education','малака':'education','касб':'work',
+  'корманд':'work','роҳбар':'work','ширкат':'work','савдо':'shopping','фоида':'work','зарар':'work',
+  'хароҷот':'shopping','буҷет':'shopping','андоза':'qualities','сифат':'qualities','миқдор':'qualities',
+  'натиҷа':'ideas','сабаб':'ideas','мақсад':'ideas','нақша':'work','қарор':'work','имконият':'ideas',
+  'хатар':'society','амният':'society','озодӣ':'society','ҳуқуқ':'society','қонун':'society','адолат':'society',
+  'баробарӣ':'society','эҳтиром':'relations','эътимод':'relations','садоқат':'relations','умед':'emotions',
+  'хушбахтӣ':'emotions','ғам':'emotions','хашм':'emotions','тарс':'emotions','ҳайрат':'emotions','шодӣ':'emotions',
+  'орзу':'emotions','хотира':'ideas','тасаввур':'ideas','идея':'ideas','назария':'science','амалия':'science',
+  'усул':'science','таҳлил':'science','арзёбӣ':'science','пешрафт':'ideas','рушд':'ideas','тағйирот':'ideas',
+  'муносибат':'relations','гуфтугӯ':'relations','баҳс':'relations','созиш':'relations',
+  'ҳамдигарфаҳмӣ':'relations','масъала':'ideas','ҳал':'ideas','фурсат':'ideas','масофа':'time','муддат':'time',
+  'давра':'time','марҳила':'time','нақл':'school',
+  // tier c — advanced/academic vocabulary
+  'мулоҳизакорона':'qualities','ниҳоят':'time','мутаносиб':'science','мушаххас кардан':'science',
+  'беэътиноӣ':'qualities','фарзия':'science','ислоҳот':'society','пешбинишаванда':'science','вобастагӣ':'science',
+  'афзалиятнок':'qualities','ҳамгироӣ':'society','инъикос кардан':'science','ғайримустақим':'science',
+  'мушоҳида кардан':'science','зиддият':'science','мафҳум':'ideas','моҳият':'ideas','назорат':'work',
+  'маъмурият':'work','салоҳият':'work','ваколат':'work','ҳисоботдиҳӣ':'work','шаффофият':'society',
+  'таносуб':'science','тахмин':'science','далел':'science','хулоса':'science','муқоиса':'science',
+  'фарқият':'science','монандӣ':'science','тағйирёбанда':'science','собит':'qualities','муваққатӣ':'time',
+  'доимӣ':'time','воқеӣ':'qualities','назариявӣ':'science','амалӣ':'science','объективӣ':'qualities',
+  'субъективӣ':'qualities','мутлақ':'qualities','нисбӣ':'qualities','возеҳ':'qualities','норавшан':'qualities',
+  'муайян':'qualities','номуайян':'qualities','эҳтимол':'science','тасодуф':'science','қонунмандӣ':'science',
+  'истисно':'society','қоида':'society','меъёр':'society','стандарт':'society','талабот':'society',
+  'шарт':'society','маҳдудият':'society','имтиёз':'society','бартарӣ':'qualities','нуқсон':'qualities',
+  'хатогӣ':'qualities','ислоҳ':'science','такмил':'science','навоварӣ':'science','ихтироъ':'science',
+  'кашфиёт':'science','таҳқиқот':'science','усулшиносӣ':'science','таснифот':'science','гурӯҳбандӣ':'science',
+  'ҷамъбаст':'science','тафсир':'science','маъно':'school','мундариҷа':'school','сохтор':'science',
+  'системавӣ':'science','равиш':'science','механизм':'science','омил':'science','таъсир':'science',
+  'натиҷабахш':'qualities','самаранок':'qualities','иловагӣ':'qualities','асосӣ':'qualities',
+  'дуюмдараҷа':'qualities','муҳим':'qualities','ночиз':'qualities','зарурӣ':'qualities','мувофиқ':'qualities',
+  'номувофиқ':'qualities'
+};
+function wordCategory(tj){ return WORD_CAT[tj] || 'other'; }
+function allLibraryWords(){
+  const out=[];
+  ['a','b','c'].forEach(tier=>{ WORDS[tier].forEach(w=>out.push(w)); });
+  return out;
+}
+
+const SYNONYMS = {
+ a: [],
+ b: [['мушкилот','масъала'],['хушбахтӣ','шодӣ'],['муваффақият','пешрафт'],['қарор','ҳал']],
+ c: [['хулоса','ҷамъбаст'],['муҳим','асосӣ'],['бартарӣ','имтиёз'],['натиҷабахш','самаранок']]
+};
+const ANTONYMS = {
+ a: [['калон','хурд'],['гарм','хунук'],['баланд','паст'],['тез','суст'],['нав','кӯҳна'],['хуб','бад'],['сафед','сиёҳ'],['рӯз','шаб']],
+ b: [['фоида','зарар'],['шодӣ','ғам']],
+ c: [['объективӣ','субъективӣ'],['мутлақ','нисбӣ'],['муайян','номуайян'],['асосӣ','дуюмдараҷа'],
+     ['муҳим','ночиз'],['мувофиқ','номувофиқ'],['фарқият','монандӣ'],['доимӣ','муваққатӣ']]
+};
+
+/* generic mad-lib templates: [tj, en, ru] with {w} placeholder */
+const TEMPLATES = [
+ ['Ин {w} хеле муҳим аст.','This {w} is very important.','Это {w} очень важно.'],
+ ['Ман дар бораи {w} гап задам.','I talked about {w}.','Я говорил о {w}.'],
+ ['Вай {w}-ро дӯст медорад.','He/she likes {w}.','Он/она любит {w}.'],
+ ['Мо {w}-ро дидем.','We saw {w}.','Мы видели {w}.'],
+ ['Ин китоб дар бораи {w} аст.','This book is about {w}.','Эта книга о {w}.'],
+ ['Ба назари ман, {w} муҳим аст.','In my opinion, {w} is important.','По-моему, {w} важно.'],
+ ['Мо бояд дар бораи {w} фикр кунем.','We should think about {w}.','Нам следует подумать о {w}.'],
+ ['Устод дар бораи {w} гуфт.','The teacher spoke about {w}.','Учитель рассказал о {w}.']
+];
+
+const SENTENCES = {
+ a: [
+  ['Ман китоб мехонам.','I read a book.','Я читаю книгу.'],
+  ['Вай ба мактаб меравад.','He goes to school.','Он идёт в школу.'],
+  ['Модарам нон мепазад.','My mother bakes bread.','Моя мама печёт хлеб.'],
+  ['Гурба дар хона аст.','The cat is in the house.','Кошка в доме.'],
+  ['Мо об менӯшем.','We drink water.','Мы пьём воду.'],
+  ['Офтоб дар осмон аст.','The sun is in the sky.','Солнце в небе.'],
+  ['Падарам мошин дорад.','My father has a car.','У моего отца есть машина.'],
+  ['Ту себ мехӯрӣ.','You eat an apple.','Ты ешь яблоко.']
+ ],
+ b: [
+  ['Ширкат стратегияи нав қабул кард.','The company adopted a new strategy.','Компания приняла новую стратегию.'],
+  ['Мо дар бораи натиҷа муҳокима кардем.','We discussed the result.','Мы обсудили результат.'],
+  ['Ӯ дар кораш муваффақият ба даст овард.','He achieved success in his work.','Он добился успеха в своей работе.'],
+  ['Ҳамкории мо самаранок аст.','Our cooperation is effective.','Наше сотрудничество эффективно.'],
+  ['Роҳбар масъулияти калон дорад.','The leader has great responsibility.','Руководитель несёт большую ответственность.'],
+  ['Мо ба мушкилот дучор шудем.','We faced difficulties.','Мы столкнулись с трудностями.'],
+  ['Таҷрибаи ӯ хеле муҳим аст.','His experience is very important.','Его опыт очень важен.'],
+  ['Онҳо қарордод имзо карданд.','They signed an agreement.','Они подписали договор.']
+ ],
+ c: [
+  ['Фарзияи илмӣ бояд исбот шавад.','The scientific hypothesis must be proven.','Научная гипотеза должна быть доказана.'],
+  ['Ислоҳот ба рушди ҷамъият мусоидат мекунад.','Reform contributes to the development of society.','Реформа способствует развитию общества.'],
+  ['Натиҷа ба сифати таҳлил вобаста аст.','The result depends on the quality of analysis.','Результат зависит от качества анализа.'],
+  ['Ин раванд возеҳ ва пешбинишаванда аст.','This process is clear and predictable.','Этот процесс ясен и предсказуем.'],
+  ['Ҳамгироии иқтисодӣ афзалиятнок ҳисобида мешавад.','Economic integration is considered preferable.','Экономическая интеграция считается предпочтительной.'],
+  ['Далелҳо зиддияти назарияро нишон доданд.','The evidence showed a contradiction in the theory.','Доказательства показали противоречие в теории.'],
+  ['Меъёрҳои нав бояд мушаххас карда шаванд.','The new standards must be specified.','Новые нормы должны быть уточнены.'],
+  ['Таҳқиқот ба хулосаи муҳим овард.','The research led to an important conclusion.','Исследование привело к важному выводу.']
+ ]
+};
+
+const NUM_LEVELS = 100;
+const NUM_VARIANTS = 10;
+const QUESTIONS_PER_VARIANT = 25;
+const PASS_THRESHOLD = 17; // need 17/25 (68%) correct to pass a variant
+function tierForLevel(lv){ return lv<=30 ? 'a' : (lv<=70 ? 'b' : 'c'); }
+
+function seedFromStr(s){ let h=1779033703^s.length; for(let i=0;i<s.length;i++){ h=Math.imul(h^s.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return h>>>0; }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function seededShuffle(arr, seed){ const rnd=mulberry32(seed); const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function seededInt(seed,n){ return Math.floor(mulberry32(seed)()*n); }
+
+function comboPoolSize(tier){
+  const W = WORDS[tier].length, T = TEMPLATES.length;
+  const syn = SYNONYMS[tier].length, ant = ANTONYMS[tier].length, sent = SENTENCES[tier].length;
+  return 2*W + 2*W*T + syn + ant + sent*5;
+}
+
+/* decode a combo index (0..poolSize) into a raw combo descriptor */
+function decodeCombo(tier, ci){
+  const W = WORDS[tier].length, T = TEMPLATES.length;
+  const synN = SYNONYMS[tier].length, antN = ANTONYMS[tier].length, sentN = SENTENCES[tier].length;
+  let x = ci;
+  if(x < W) return {type:'tr1', wi:x};
+  x -= W;
+  if(x < W) return {type:'tr2', wi:x};
+  x -= W;
+  if(x < W*T) return {type:'fillblank', wi:Math.floor(x/T), ti:x%T};
+  x -= W*T;
+  if(x < W*T) return {type:'grammar', wi:Math.floor(x/T), ti:x%T};
+  x -= W*T;
+  if(x < synN) return {type:'synonym', pi:x};
+  x -= synN;
+  if(x < antN) return {type:'antonym', pi:x};
+  x -= antN;
+  const si = Math.floor(x/5), sv = x%5;
+  return {type:'order', si, sv};
+}
+
+function wordTarget(triple, lang){ return lang==='en' ? triple[1] : triple[2]; }
+
+function findWordByTj(tier, tj){ return WORDS[tier].find(w=>w[0]===tj); }
+
+function buildQuestion(lang, tier, combo, seed){
+  const words = WORDS[tier];
+  const rnd = mulberry32(seed);
+  const pickDistractors = (excludeVal, pool, n)=>{
+    const cand = pool.filter(v=>v!==excludeVal);
+    return seededShuffle(cand, seed+cand.length).slice(0,n);
+  };
+  if(combo.type==='tr1' || combo.type==='fillblank'){
+    const triple = words[combo.wi];
+    const ans = wordTarget(triple, lang);
+    const pool = words.filter((w,i)=>i!==combo.wi).map(w=>wordTarget(w,lang));
+    const distractors = seededShuffle(pool, seed+1).slice(0,3);
+    const options = seededShuffle([ans,...distractors], seed+2);
+    let prompt = triple[0];
+    if(combo.type==='fillblank'){
+      const tpl = TEMPLATES[combo.ti];
+      prompt = tpl[0].replace('{w}', triple[0]);
+    }
+    return { prompt, answer:ans, options, qtype: combo.type==='fillblank'?'fillblank':'translate' };
+  }
+  if(combo.type==='tr2' || combo.type==='grammar'){
+    const triple = words[combo.wi];
+    const ans = triple[0];
+    const pool = words.filter((w,i)=>i!==combo.wi).map(w=>w[0]);
+    const distractors = seededShuffle(pool, seed+3).slice(0,3);
+    const options = seededShuffle([ans,...distractors], seed+4);
+    let prompt = wordTarget(triple, lang);
+    if(combo.type==='grammar'){
+      const tpl = TEMPLATES[combo.ti];
+      const tplText = lang==='en'?tpl[1]:tpl[2];
+      prompt = tplText.replace('{w}', wordTarget(triple,lang));
+    }
+    return { prompt, answer:ans, options, qtype: combo.type==='grammar'?'grammar':'translate' };
+  }
+  if(combo.type==='synonym' || combo.type==='antonym'){
+    const pairs = combo.type==='synonym' ? SYNONYMS[tier] : ANTONYMS[tier];
+    const pair = pairs[combo.pi];
+    const base = findWordByTj(tier, pair[0]);
+    const partner = findWordByTj(tier, pair[1]);
+    const ans = wordTarget(partner, lang);
+    const pool = words.filter(w=>w[0]!==pair[0] && w[0]!==pair[1]).map(w=>wordTarget(w,lang));
+    const distractors = seededShuffle(pool, seed+5).slice(0,3);
+    const options = seededShuffle([ans,...distractors], seed+6);
+    return { prompt: base[0], answer:ans, options, qtype: combo.type };
+  }
+  if(combo.type==='order'){
+    const sent = SENTENCES[tier][combo.si];
+    const text = lang==='en'?sent[1]:sent[2];
+    const wordsArr = text.split(' ');
+    const correct = wordsArr.join(' ');
+    const opts = new Set([correct]);
+    let tries=0;
+    while(opts.size<4 && tries<20){
+      const shuffled = seededShuffle(wordsArr, seed+7+opts.size*13+tries).join(' ');
+      opts.add(shuffled); tries++;
+    }
+    const options = seededShuffle(Array.from(opts), seed+8);
+    return { prompt: sent[0], answer: correct, options, qtype:'order' };
+  }
+}
+
+function buildQuiz(lang, level, variant){
+  const tier = tierForLevel(level);
+  const poolSize = comboPoolSize(tier);
+  // levels within this tier, 0-based index of this level inside its tier
+  const tierStart = tier==='a'?1:(tier==='b'?31:71);
+  const levelInTier = level - tierStart; // 0-based
+  const globalVariantIdx = levelInTier*NUM_VARIANTS + (variant-1); // 0-based across the tier
+  const out = [];
+  for(let qi=0; qi<QUESTIONS_PER_VARIANT; qi++){
+    const globalSlot = globalVariantIdx*QUESTIONS_PER_VARIANT + qi;
+    const passNum = Math.floor(globalSlot/poolSize);
+    const posInPass = globalSlot % poolSize;
+    const permSeed = seedFromStr(tier+'-perm-'+passNum);
+    const perm = seededShuffle([...Array(poolSize).keys()], permSeed);
+    const comboIndex = perm[posInPass];
+    const combo = decodeCombo(tier, comboIndex);
+    const slotSeed = seedFromStr(lang+'-'+level+'-'+variant+'-'+qi+'-'+globalSlot);
+    const q = buildQuestion(lang, tier, combo, slotSeed);
+    out.push({ tj:q.prompt, answer:q.answer, options:q.options, qtype:q.qtype });
+  }
+  return out;
+}
+
+
+/* ---------- state ---------- */
+function freshProgress(){
+  const mk = ()=>{ const levels={}; for(let l=1;l<=NUM_LEVELS;l++){ const variants={}; for(let v=1;v<=NUM_VARIANTS;v++){ variants[v]={done:false,score:0}; } levels[l]={variants, unlockedVariant: l===1?1:0}; } return {levels, unlockedLevel:1}; };
+  return { en:mk(), ru:mk() };
+}
+let S = {
+  screen:'auth', authMode:'register', authErr:'', lampLit:false,
+  regName:'', regSurname:'', regEmail:'', regPassword:'',
+  loginEmail:'', loginPassword:'', resetEmail:'', newPassword:'',
+  learnLang:null, declaredLevel:null, referral:null,
+  dark:true, uiLang:'tj',
+  user:null,
+  progress: freshProgress(),
+  stats:{ correct:0, wrong:0, xp:0 },
+  avatarHue: 260,
+  avatarPhoto:null,
+  navTarget:'dashboard',
+  selectedLevel:null,
+  quiz:null,
+  editingName:false, nameDraft:'',
+  busy:false,
+  libTier:'a', libQuery:'', libCat:'all',
+  adminLoading:false, adminPeriod:'all', adminRaw:null, adminErr:'',
+  ratingLoading:false, ratingRaw:null, ratingErr:'',
+  soundOn:true,
+  showChangePass:false, settingsNewPass:'', settingsPassErr:'', settingsPassBusy:false
+};
+
+/* ---------- account persistence (real backend: Supabase) ----------
+   Accounts, passwords, and progress are stored in a real Postgres database
+   via Supabase. Passwords are handled entirely by Supabase Auth (never
+   touch our own tables) — this is real server-side auth, not a browser demo. */
+
+/* !!! CONFIG: fill these in with your own Supabase project's values
+   (Project Settings → API in supabase.com dashboard). !!! */
+const SUPABASE_URL = 'https://iibcsfecohojjvnhjjej.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_IltT7qmYQPxIX07PVzF-gw_KojOW6KS';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* When the person clicks the reset link in their email, Supabase fires this
+   event with a temporary recovery session — send them to the "set a new
+   password" screen instead of straight into someone else's dashboard. */
+sb.auth.onAuthStateChange((event)=>{
+  if(event==='PASSWORD_RECOVERY'){ S.screen='newpass'; S.authErr=''; render(); }
+});
+
+function accountKey(email){ return String(email).trim().toLowerCase(); }
+
+function profileRowToAccount(row){
+  return {
+    id: row.id, name: row.name, surname: row.surname, email: row.email,
+    registeredAt: row.registered_at ? new Date(row.registered_at).getTime() : null,
+    learnLang: row.learn_lang, declaredLevel: row.declared_level, referral: row.referral,
+    progress: row.progress, stats: row.stats,
+    avatarHue: row.avatar_hue, avatarPhoto: row.avatar_photo,
+    uiLang: row.ui_lang, dark: row.dark
+  };
+}
+async function loadAccountByEmail(email){
+  const { data, error } = await sb.from('profiles').select('*').eq('email', accountKey(email)).maybeSingle();
+  if(error || !data) return null;
+  return profileRowToAccount(data);
+}
+async function loadAccountById(id){
+  const { data, error } = await sb.from('profiles').select('*').eq('id', id).maybeSingle();
+  if(error || !data) return null;
+  return profileRowToAccount(data);
+}
+function snapshotAccount(){
+  if(!S.user) return null;
+  return {
+    id:S.user.id, name:S.user.name, surname:S.user.surname,
+    learn_lang:S.learnLang, declared_level:S.declaredLevel, referral:S.referral,
+    progress:S.progress, stats:S.stats, avatar_hue:S.avatarHue, avatar_photo:S.avatarPhoto,
+    ui_lang:S.uiLang, dark:S.dark
+  };
+}
+let persistTimer=null;
+function persistAccount(){
+  if(!S.user) return;
+  clearTimeout(persistTimer);
+  persistTimer=setTimeout(async ()=>{
+    const snap = snapshotAccount();
+    if(!snap || !snap.id) return;
+    try{
+      await sb.from('profiles').update({
+        name:snap.name, surname:snap.surname, learn_lang:snap.learn_lang, declared_level:snap.declared_level,
+        referral:snap.referral, progress:snap.progress, stats:snap.stats, avatar_hue:snap.avatar_hue,
+        avatar_photo:snap.avatar_photo, ui_lang:snap.ui_lang, dark:snap.dark
+      }).eq('id', snap.id);
+    }catch(e){ /* best effort — never break the UI on a save hiccup */ }
+  }, 250);
+}
+
+/* ---------- admin: registered-user directory + XP activity log ----------
+   Admin access is granted to any account whose email is in ADMIN_EMAILS —
+   put your own email there (the one you register with) to see the panel
+   from the bottom nav. Reads the real profiles/xp_log tables in Supabase. */
+const ADMIN_EMAILS = ['dontismaking@gmail.com'];
+function isAdmin(){ return !!(S.user && ADMIN_EMAILS.includes(String(S.user.email||'').trim().toLowerCase())); }
+
+async function fetchAllProfiles(){
+  const { data, error } = await sb.from('profiles').select('*');
+  if(error || !data) return [];
+  return data;
+}
+async function fetchXpLog(email){
+  const { data, error } = await sb.from('xp_log').select('ts, xp').eq('email', accountKey(email)).order('ts', {ascending:true});
+  if(error || !data) return [];
+  return data;
+}
+async function appendXpLog(email, xpGained){
+  if(!xpGained) return;
+  try{ await sb.from('xp_log').insert({ email: accountKey(email), ts: Date.now(), xp: xpGained }); }
+  catch(e){ /* never let logging break the quiz flow */ }
+}
+const PERIOD_MS = { day:24*3600*1000, week:7*24*3600*1000, month:30*24*3600*1000, all:null };
+function xpForPeriod(totalXp, events, period){
+  const ms = PERIOD_MS[period];
+  if(ms==null) return totalXp;
+  const cutoff = Date.now()-ms;
+  return events.filter(e=>e.ts>=cutoff).reduce((s,e)=>s+(e.xp||0),0);
+}
+function adminLeaderboard(){
+  if(!S.adminRaw) return [];
+  const { users, events } = S.adminRaw;
+  return users.map(u=>({ ...u, periodXp: xpForPeriod(u.xp, events[u.email]||[], S.adminPeriod) }))
+    .sort((a,b)=> b.periodXp-a.periodXp || b.xp-a.xp);
+}
+function fmtDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+
+/* ---------- SOUND: soft, premium UI click / feedback tones (Web Audio, no files) ---------- */
+let _actx=null;
+function actx(){
+  if(!_actx){ try{ _actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ _actx=null; } }
+  if(_actx && _actx.state==='suspended'){ _actx.resume().catch(()=>{}); }
+  return _actx;
+}
+function tone(freq, start, dur, opts){
+  opts = opts||{};
+  const ctx = actx(); if(!ctx) return;
+  const type = opts.type||'sine', peak = opts.peak!==undefined?opts.peak:.08;
+  const t0 = ctx.currentTime+start;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+  if(opts.glideTo) osc.frequency.exponentialRampToValueAtTime(opts.glideTo, t0+dur);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(peak, t0+.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0+dur+.02);
+}
+/* soft two-tone "tick" — plays on every button / interactive press */
+function playClick(){
+  if(!S.soundOn) return;
+  try{ tone(1240,0,.045,{type:'sine',peak:.06}); tone(880,.012,.05,{type:'sine',peak:.04}); }catch(e){}
+}
+/* bright ascending chime — correct quiz answer */
+function playCorrect(){
+  if(!S.soundOn) return;
+  try{ tone(783.99,0,.11,{type:'sine',peak:.10}); tone(1046.5,.07,.17,{type:'sine',peak:.11}); }catch(e){}
+}
+/* gentle low descending tone — wrong quiz answer (kept soft, not harsh) */
+function playWrong(){
+  if(!S.soundOn) return;
+  try{ tone(311,0,.09,{type:'triangle',peak:.08}); tone(220,.08,.17,{type:'triangle',peak:.07}); }catch(e){}
+}
+/* every element in this app that reacts to a click carries an inline onclick=""
+   attribute, so one delegated listener gives every button/toggle/card a press
+   sound without touching each of the 40+ call sites individually. */
+document.addEventListener('click', function(e){
+  const el = e.target.closest('[onclick]');
+  if(!el || el.classList.contains('qopt')) return; // quiz options get their own correct/wrong sound
+  playClick();
+});
+
+const ICON_EYE = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_EYE_OFF = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.6 20.6 0 0 1 5.06-6.06M9.9 4.24A10.87 10.87 0 0 1 12 4c7 0 11 8 11 8a20.6 20.6 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+/* ---------- helpers ---------- */
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._tm); toast._tm=setTimeout(()=>el.classList.remove('show'),2200);
+}
+function initials(){ if(!S.user) return '?'; return (S.user.name[0]||'').toUpperCase()+(S.user.surname[0]||'').toUpperCase(); }
+function applyTheme(){ document.documentElement.classList.toggle('light', !S.dark); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function go(screen, extra){ S.screen=screen; Object.assign(S, extra||{}); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---------- render root ---------- */
+function render(){
+  applyTheme();
+  const app=document.getElementById('app');
+  let html='';
+  switch(S.screen){
+    case 'auth': html=renderAuth(); break;
+    case 'newpass': html=renderNewPassword(); break;
+    case 'rating': html=renderRating(); break;
+    case 'onb-lang': html=renderOnbLang(); break;
+    case 'onb-level': html=renderOnbLevel(); break;
+    case 'onb-ref': html=renderOnbRef(); break;
+    case 'welcome': html=renderWelcome(); break;
+    case 'dashboard': html=renderDashboard(); break;
+    case 'variants': html=renderVariants(); break;
+    case 'quiz': html=renderQuiz(); break;
+    case 'results': html=renderResults(); break;
+    case 'profile': html=renderProfile(); break;
+    case 'settings': html=renderSettings(); break;
+    case 'library': html=renderLibrary(); break;
+    case 'admin': html=renderAdmin(); break;
+    default: html='<div>—</div>';
+  }
+  const showNav = ['dashboard','variants','profile','settings','library','admin','rating'].includes(S.screen);
+  app.innerHTML = `<div class="screen">${html}</div>` + (showNav ? renderNav() : '');
+  if(showNav) requestAnimationFrame(positionBlob);
+}
+
+/* ---------- AUTH ---------- */
+function renderAuth(){
+  return `
+  <div class="center-shell">
+    <div class="auth-wrap">
+      <div class="lamp-side ${S.lampLit?'lit':''}" id="lampSide">
+        <div class="lamp-glow"></div>
+        ${lampSvg()}
+        <div class="lamp-caption">${t('appName')}<br><span class="lamp-hint">${t('lampHint')}</span></div>
+      </div>
+      <div class="form-side">
+        <div class="brand" style="margin-bottom:22px;"><div class="mark">🪄</div>${t('appName')}</div>
+        ${S.authMode==='forgot' ? '' : `<div class="tabs">
+          <button class="tab ${S.authMode==='login'?'active':''}" onclick="App.setAuthMode('login')">${t('login')}</button>
+          <button class="tab ${S.authMode==='register'?'active':''}" onclick="App.setAuthMode('register')">${t('register')}</button>
+        </div>`}
+        ${S.authMode==='forgot' ? renderForgotForm() : (S.authMode==='register' ? renderRegisterForm() : renderLoginForm())}
+      </div>
+    </div>
+  </div>`;
+}
+function lampSvg(){
+  return `
+  <svg class="lamp-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="245" rx="46" ry="8" fill="rgba(0,0,0,.35)"/>
+    <rect x="92" y="150" width="16" height="90" rx="4" fill="#2b2d33"/>
+    <path d="M40 60 L160 60 L130 150 L70 150 Z" fill="#3a3c44" stroke="#55575f" stroke-width="2"/>
+    <ellipse class="bulb" cx="100" cy="150" rx="14" ry="14"/>
+    <g class="cord" onclick="App.toggleLamp()">
+      <line class="cord-line" x1="100" y1="150" x2="100" y2="196"/>
+      <g class="cord-pull" transform="translate(100,196)">
+        <line class="cord-line" x1="0" y1="0" x2="0" y2="26"/>
+        <circle cx="0" cy="30" r="6" fill="#a6905c" opacity="${S.lampLit?1:0.7}"/>
+      </g>
+    </g>
+  </svg>`;
+}
+function renderRegisterForm(){
+  const locked = !S.lampLit;
+  const dis = locked ? 'disabled' : '';
+  const gate = locked ? `onclick="App.lampGateHint()"` : '';
+  return `
+  <div class="form-title">${t('createAcc')}</div>
+  <div class="form-sub">ZabonOmuz — забони англисӣ ва русиро бо лаззат омӯз</div>
+  ${locked ? `<div class="lamp-gate-hint">💡 ${t('pullLamp')}</div>` : ''}
+  <div class="field" ${gate}><label>${t('name')}</label><input id="f_name" ${dis} value="${esc(S.regName)}" oninput="S.regName=this.value"></div>
+  <div class="field" ${gate}><label>${t('surname')}</label><input id="f_sur" ${dis} value="${esc(S.regSurname)}" oninput="S.regSurname=this.value"></div>
+  <div class="field" ${gate}><label>${t('email')}</label><input id="f_email" type="email" ${dis} value="${esc(S.regEmail)}" oninput="S.regEmail=this.value"></div>
+  <div class="field" ${gate}><label>${t('password')}</label><div class="pass-wrap"><input id="f_pass" type="password" ${dis} value="${esc(S.regPassword)}" oninput="S.regPassword=this.value" autocomplete="new-password"><button type="button" class="pass-toggle" ${dis} onclick="App.togglePass(this,'f_pass')" aria-label="${t('showPassword')}">${ICON_EYE}</button></div></div>
+  <div class="err">${esc(S.authErr)}</div>
+  <button class="btn btn-primary btn-block" ${dis} onclick="App.doRegister(event)">${t('createAcc')} →</button>`;
+}
+function renderLoginForm(){
+  const locked = !S.lampLit;
+  const dis = locked ? 'disabled' : '';
+  const gate = locked ? `onclick="App.lampGateHint()"` : '';
+  return `
+  <div class="form-title">${t('login')}</div>
+  <div class="form-sub">Хуш омадед бозгашт!</div>
+  ${locked ? `<div class="lamp-gate-hint">💡 ${t('pullLamp')}</div>` : ''}
+  <div class="field" ${gate}><label>${t('email')}</label><input id="f_lemail" type="email" ${dis} value="${esc(S.loginEmail)}" oninput="S.loginEmail=this.value"></div>
+  <div class="field" ${gate}><label>${t('password')}</label><div class="pass-wrap"><input id="f_lpass" type="password" ${dis} value="${esc(S.loginPassword)}" oninput="S.loginPassword=this.value" autocomplete="current-password"><button type="button" class="pass-toggle" ${dis} onclick="App.togglePass(this,'f_lpass')" aria-label="${t('showPassword')}">${ICON_EYE}</button></div></div>
+  <div style="text-align:right; margin:-8px 0 14px;"><button type="button" style="font-size:12.5px; font-weight:700; color:var(--violet);" onclick="App.openForgot()">${t('forgotPassword')}</button></div>
+  <div class="err">${esc(S.authErr)}</div>
+  <button class="btn btn-gold btn-block" ${dis} onclick="App.doLogin(event)">${t('signIn')} →</button>`;
+}
+function renderForgotForm(){
+  const locked = !S.lampLit;
+  const dis = locked ? 'disabled' : '';
+  const gate = locked ? `onclick="App.lampGateHint()"` : '';
+  return `
+  <div class="form-title">${t('resetTitle')}</div>
+  <div class="form-sub">${t('resetSub')}</div>
+  ${locked ? `<div class="lamp-gate-hint">💡 ${t('pullLamp')}</div>` : ''}
+  <div class="field" ${gate}><label>${t('email')}</label><input id="f_remail" type="email" ${dis} value="${esc(S.resetEmail)}" oninput="S.resetEmail=this.value"></div>
+  <div class="err">${esc(S.authErr)}</div>
+  <button class="btn btn-primary btn-block" ${dis} onclick="App.doForgotPassword(event)">${t('resetSend')} →</button>
+  <button type="button" class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="App.setAuthMode('login')">← ${t('backToLogin')}</button>`;
+}
+
+function renderNewPassword(){
+  return `
+  <div class="center-shell"><div class="glass-strong glass" style="width:100%; max-width:420px; padding:40px 34px;">
+    <div class="brand" style="margin-bottom:22px;"><div class="mark">🪄</div>${t('appName')}</div>
+    <div class="form-title">${t('newPasswordTitle')}</div>
+    <div class="form-sub">${t('newPasswordSub')}</div>
+    <div class="field"><label>${t('password')}</label><div class="pass-wrap"><input id="f_newpass" type="password" value="${esc(S.newPassword)}" oninput="S.newPassword=this.value" autocomplete="new-password"><button type="button" class="pass-toggle" onclick="App.togglePass(this,'f_newpass')" aria-label="${t('showPassword')}">${ICON_EYE}</button></div></div>
+    <div class="err">${esc(S.authErr)}</div>
+    <button class="btn btn-primary btn-block" onclick="App.doSetNewPassword(event)">${t('newPasswordSave')} →</button>
+  </div></div>`;
+}
+
+/* ---------- ONBOARDING ---------- */
+function dots(step,total){ let h='<div class="progress-dots">'; for(let i=0;i<total;i++) h+=`<span class="${i<step?'on':''}"></span>`; return h+'</div>'; }
+function renderOnbLang(){
+  return `<div class="center-shell"><div class="onb-shell">
+    ${dots(1,3)}
+    <div class="onb-eyebrow">${t('appName')}</div>
+    <div class="onb-title">${t('chooseLang')}</div>
+    <div class="onb-sub">${S.user?`${t('greetingName')}, ${esc(S.user.name)}!`:''}</div>
+    <div class="opt-grid two">
+      <button class="opt-card glass" onclick="App.chooseLang('en')"><div class="ic">🇬🇧</div><div><div class="lbl">${t('english')}</div><div class="sub">English</div></div></button>
+      <button class="opt-card glass" onclick="App.chooseLang('ru')"><div class="ic">🇷🇺</div><div><div class="lbl">${t('russian')}</div><div class="sub">Русский</div></div></button>
+    </div>
+  </div></div>`;
+}
+function renderOnbLevel(){
+  return `<div class="center-shell"><div class="onb-shell">
+    ${dots(2,3)}
+    <div class="onb-eyebrow">${S.learnLang==='en'?t('english'):t('russian')}</div>
+    <div class="onb-title">${t('level')}</div>
+    <div class="opt-grid">
+      <button class="opt-card glass" onclick="App.chooseLevel('novice')"><div class="ic">🌱</div><div><div class="lbl">${t('novice')}</div><div class="sub">${t('novDesc')}</div></div></button>
+      <button class="opt-card glass" onclick="App.chooseLevel('mid')"><div class="ic">🚀</div><div><div class="lbl">${t('mid')}</div><div class="sub">${t('midDesc')}</div></div></button>
+      <button class="opt-card glass" onclick="App.chooseLevel('pro')"><div class="ic">🏆</div><div><div class="lbl">${t('pro')}</div><div class="sub">${t('proDesc')}</div></div></button>
+    </div>
+  </div></div>`;
+}
+function renderOnbRef(){
+  const opts=[['ig','📷'],['tg','✈️'],['friend','👥'],['google','🔍'],['other','✨']];
+  return `<div class="center-shell"><div class="onb-shell">
+    ${dots(3,3)}
+    <div class="onb-title">${t('ref')}</div>
+    <div class="opt-grid two">
+      ${opts.map(([k,ic])=>`<button class="opt-card glass" onclick="App.chooseRef('${k}')"><div class="ic">${ic}</div><div class="lbl">${t('referral_'+k)}</div></button>`).join('')}
+    </div>
+  </div></div>`;
+}
+function renderWelcome(){
+  return `<div class="center-shell"><div class="onb-shell">
+    <div class="welcome-badge">🎉</div>
+    <div class="onb-title">${t('welcome')} ${t('appName')}${S.user?', '+esc(S.user.name):''}!</div>
+    <div class="onb-sub">${t('welcomeSub')}</div>
+    <button class="btn btn-primary" style="padding:17px 44px; font-size:16px;" onclick="App.finishOnboarding()">${t('startBtn')} →</button>
+  </div></div>`;
+}
+
+/* ---------- DASHBOARD ---------- */
+function langLabel(){ return S.learnLang==='ru' ? t('russian') : t('english'); }
+function renderDashboard(){
+  const prog = S.progress[S.learnLang];
+  let levelsHtml='';
+  for(let l=1; l<=NUM_LEVELS; l++){
+    const unlocked = l<=prog.unlockedLevel;
+    const allDone = Object.values(prog.levels[l].variants).every(v=>v.done);
+    levelsHtml += `<button class="level-card glass ${unlocked?'':'locked'} ${allDone?'done':''}" ${unlocked?`onclick="App.openLevel(${l})"`:''}>
+      <div class="lvl-num">${l}</div><div class="lvl-lbl">${t('levelsTitle')} ${l}</div>
+      <div class="ring">${allDone?'✅':(unlocked?'🔓':'🔒')}</div>
+    </button>`;
+  }
+  return `<div class="app-shell">
+    ${topbar()}
+    <div class="onb-eyebrow" style="text-align:left;">${langLabel()}</div>
+    <h1 class="disp" style="font-size:24px; margin-bottom:20px;">${t('greetingName')}, ${S.user?esc(S.user.name):''} 👋</h1>
+    <div class="streak-row">
+      <div class="stat-chip glass"><div class="num">${S.stats.xp}</div><div class="lbl">${t('totalXp')}</div></div>
+      <div class="stat-chip glass"><div class="num">${prog.unlockedLevel}</div><div class="lbl">${t('levelsTitle')}</div></div>
+      <div class="stat-chip glass"><div class="num">${S.stats.correct}</div><div class="lbl">${t('correct')}</div></div>
+    </div>
+    <div class="section-head"><h2>${t('levelsTitle')}</h2></div>
+    <div class="level-grid">${levelsHtml}</div>
+  </div>`;
+}
+function topbar(){
+  return `<div class="topbar">
+    <div class="brand"><div class="mark">🪄</div>${t('appName')}</div>
+    <div class="xp-pill glass">⚡ ${S.stats.xp} ${t('xp')}</div>
+  </div>`;
+}
+function renderVariants(){
+  const l = S.selectedLevel;
+  const prog = S.progress[S.learnLang];
+  const lvl = prog.levels[l];
+  let rows='';
+  for(let v=1; v<=NUM_VARIANTS; v++){
+    const unlocked = v<=lvl.unlockedVariant;
+    const d = lvl.variants[v];
+    rows += `<button class="variant-row glass ${unlocked?'':'locked'} ${d.done?'done':''}" ${unlocked?`onclick="App.startQuiz(${l},${v})"`:''}>
+      <div class="vnum">${d.done?'✓':v}</div>
+      <div class="vinfo"><div class="vtitle">${t('variant')} ${v}</div><div class="vsub">${QUESTIONS_PER_VARIANT} ${t('question')} · ${d.done? d.score+'/'+QUESTIONS_PER_VARIANT+' '+t('correct') : t('questionsOf')}</div></div>
+      <div class="pill-btn">${unlocked ? (d.done? '↻' : '▶') : '🔒'}</div>
+    </button>`;
+  }
+  return `<div class="app-shell">
+    ${topbar()}
+    <button class="back-link" onclick="App.go('dashboard')">← ${t('dashboard')}</button>
+    <h1 class="disp" style="font-size:22px; margin-bottom:4px;">${t('variantsOf')} ${l}</h1>
+    <div class="onb-sub" style="margin-bottom:22px; text-align:left;">${langLabel()}</div>
+    <div class="variant-list">${rows}</div>
+  </div>`;
+}
+
+/* ---------- QUIZ ---------- */
+const QTYPE_META = {
+  translate:{ic:'🔤', key:'qtypeTranslate'},
+  fillblank:{ic:'✏️', key:'qtypeFillblank'},
+  grammar:{ic:'📘', key:'qtypeGrammar'},
+  synonym:{ic:'🔁', key:'qtypeSynonym'},
+  antonym:{ic:'↔️', key:'qtypeAntonym'},
+  order:{ic:'🧩', key:'qtypeOrder'}
+};
+function renderQuiz(){
+  const q = S.quiz;
+  const cur = q.questions[q.idx];
+  const pct = Math.round((q.idx/q.questions.length)*100);
+  const meta = QTYPE_META[cur.qtype] || QTYPE_META.translate;
+  return `<div class="quiz-shell">
+    <div class="quiz-top">
+      <button class="quiz-x glass" onclick="App.exitQuiz()">✕</button>
+      <div class="quiz-bar"><div class="quiz-bar-fill" style="width:${pct}%"></div></div>
+      <div class="xp-pill glass">⚡ ${q.correct*2}</div>
+    </div>
+    <div class="qcard glass type-${cur.qtype}">
+      <div class="qtype-badge">${meta.ic} ${t(meta.key)}</div>
+      <div class="qmeta">${t('questionOfN')} ${q.idx+1} / ${q.questions.length}</div>
+      <div class="qword">${esc(cur.tj)}</div>
+      <div class="qopts" id="qopts">
+        ${cur.options.map((o,i)=>`<button class="qopt glass" id="opt${i}" onclick="App.answer(${i})">${esc(o)}</button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- RESULTS ---------- */
+function renderResults(){
+  const r = S.quiz;
+  const pct = Math.round((r.correct/r.questions.length)*100);
+  const passed = r.correct >= PASS_THRESHOLD;
+  const circumference = 2*Math.PI*62;
+  const dash = circumference*(pct/100);
+  return `<div class="center-shell"><div class="result-shell glass" style="padding:40px 30px;">
+    <div class="result-ring">
+      <svg width="150" height="150"><circle cx="75" cy="75" r="62" stroke="var(--border)" stroke-width="10" fill="none"/>
+      <circle cx="75" cy="75" r="62" stroke="url(#g)" stroke-width="10" fill="none" stroke-linecap="round"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${circumference-dash}"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b7cf9"/><stop offset="100%" stop-color="#2bd9c9"/></linearGradient></defs></svg>
+      <div class="pct"><b>${pct}%</b><span>${r.correct}/${r.questions.length}</span></div>
+    </div>
+    <h2 class="disp" style="font-size:22px; margin-bottom:8px;">${passed? t('passed') : t('tryAgain')}</h2>
+    <div class="onb-sub">+${r.correct*2} ${t('xpEarned')}</div>
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button class="btn btn-ghost btn-block" onclick="App.go('variants')">${t('backHome')}</button>
+      <button class="btn btn-primary btn-block" onclick="App.afterResults()">${passed? t('keepGoing') : t('tryAgain')}</button>
+    </div>
+  </div></div>`;
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile(){
+  const total = S.stats.correct + S.stats.wrong;
+  const acc = total ? Math.round((S.stats.correct/total)*100) : 0;
+  return `<div class="app-shell">
+    ${topbar()}
+    <div class="profile-head glass" style="padding:34px 20px;">
+      <div class="avatar" style="${S.avatarPhoto?'':`background:linear-gradient(135deg, hsl(${S.avatarHue} 80% 65%), hsl(${(S.avatarHue+70)%360} 80% 55%));`} cursor:pointer; overflow:hidden;" onclick="App.pickPhoto()">${S.avatarPhoto?`<img src="${S.avatarPhoto}" style="width:100%;height:100%;object-fit:cover;">`:initials()}</div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="App.onPhotoChosen(this)">
+      ${S.editingName ? `
+        <div class="profile-name-edit">
+          <input value="${esc(S.nameDraft)}" oninput="S.nameDraft=this.value" style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-align:center;">
+          <button class="pill-btn" onclick="App.saveName()">${t('save')}</button>
+        </div>` : `
+        <h2 class="disp" style="font-size:22px;">${esc(S.user.name)} ${esc(S.user.surname)} <button class="pill-btn" style="margin-left:6px;" onclick="App.editName()">${t('editName')}</button></h2>`}
+      <div class="onb-sub" style="margin-top:4px;">${esc(S.user.email)}</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="pill-btn" onclick="App.pickPhoto()">📷 ${t('changePhoto')}</button>
+        <button class="pill-btn" onclick="App.cycleAvatar()">🎨 ${t('changeAvatar')}</button>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box glass"><div class="n">${S.stats.xp}</div><div class="l">${t('totalXp')}</div></div>
+      <div class="stat-box glass"><div class="n">${S.stats.correct}</div><div class="l">${t('correct')}</div></div>
+      <div class="stat-box glass"><div class="n">${S.stats.wrong}</div><div class="l">${t('wrong')}</div></div>
+    </div>
+    <div class="row-item glass"><div class="rl">${t('accountInfo')}</div><div>${acc}% ${t('correct').toLowerCase()}</div></div>
+    <div class="row-item glass"><div class="rl">${langLabel()}</div><div>${t('level')==='' ? '' : ({novice:t('novice'),mid:t('mid'),pro:t('pro')}[S.declaredLevel]||'')}</div></div>
+  </div>`;
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  return `<div class="app-shell">
+    ${topbar()}
+    <h1 class="disp" style="font-size:22px; margin-bottom:20px;">${t('settings')}</h1>
+    <div class="row-item glass">
+      <div class="rl">${t('darkMode')}</div>
+      <div class="toggle-switch ${S.dark?'on':''}" onclick="App.toggleDark()"><div class="toggle-knob">${S.dark?'🌙':'☀️'}</div></div>
+    </div>
+    <div class="row-item glass" style="flex-direction:column; align-items:stretch; gap:10px;">
+      <div class="rl">${t('interfaceLang')}</div>
+      <div class="segmented">
+        <button class="seg-opt ${S.uiLang==='tj'?'active':''}" onclick="App.setUiLang('tj')">Тоҷикӣ</button>
+        <button class="seg-opt ${S.uiLang==='ru'?'active':''}" onclick="App.setUiLang('ru')">Русский</button>
+        <button class="seg-opt ${S.uiLang==='en'?'active':''}" onclick="App.setUiLang('en')">English</button>
+      </div>
+    </div>
+    <div class="row-item glass">
+      <div class="rl">${t('soundEffects')}</div>
+      <div class="toggle-switch ${S.soundOn?'on':''}" onclick="App.toggleSound()"><div class="toggle-knob">${S.soundOn?'🔊':'🔇'}</div></div>
+    </div>
+    <div class="row-item glass" style="cursor:pointer;" onclick="App.toggleChangePass()"><div class="rl">${t('changePassword')}</div><div>${S.showChangePass?'▲':'▼'}</div></div>
+    ${S.showChangePass ? `
+    <div class="glass" style="padding:18px 18px 16px; border-radius:15px; margin:-4px 0 10px;">
+      <div class="field" style="margin-bottom:12px;">
+        <label>${t('password')}</label>
+        <div class="pass-wrap"><input id="f_settingspass" type="password" value="${esc(S.settingsNewPass)}" oninput="S.settingsNewPass=this.value" autocomplete="new-password"><button type="button" class="pass-toggle" onclick="App.togglePass(this,'f_settingspass')" aria-label="${t('showPassword')}">${ICON_EYE}</button></div>
+      </div>
+      <div class="err">${esc(S.settingsPassErr)}</div>
+      <button class="btn btn-primary btn-block" ${S.settingsPassBusy?'disabled':''} onclick="App.doChangePassword()">${t('newPasswordSave')} →</button>
+    </div>` : ''}
+    <div class="row-item glass" style="cursor:pointer;" onclick="App.logout()"><div class="rl" style="color:#ff8b8b;">${t('logout')}</div><div>→</div></div>
+    <div class="onb-sub" style="text-align:left; font-size:11.5px; opacity:.6; margin-top:10px;">${t('demoNote')}</div>
+  </div>`;
+}
+
+/* ---------- LIBRARY ---------- */
+function renderLibrary(){
+  const q = S.libQuery.trim().toLowerCase();
+  const cat = S.libCat || 'all';
+  const all = allLibraryWords()
+    .filter(w=> !q || w[0].toLowerCase().includes(q) || w[1].toLowerCase().includes(q) || w[2].toLowerCase().includes(q));
+  const cats = ['all', ...CAT_ORDER];
+  const rowsHtml = (arr)=> arr.slice().sort((a,b)=> a[0].localeCompare(b[0],'ru'))
+    .map(w=>`<div class="lib-row glass"><div class="lw">${esc(w[0])}</div><div class="lt">${esc(w[1])}<br>${esc(w[2])}</div></div>`).join('');
+  let body;
+  if(cat==='all'){
+    // grouped by topic, e.g. all home words together, all fruit/food words together, etc.
+    const groups = {};
+    all.forEach(w=>{ const c=wordCategory(w[0]); (groups[c]=groups[c]||[]).push(w); });
+    body = CAT_ORDER.filter(c=>groups[c] && groups[c].length).map(c=>`
+      <div class="section-head" style="margin:22px 0 10px;"><h2>${t(CAT_KEY[c])}</h2><span class="pill-btn" style="pointer-events:none;">${groups[c].length}</span></div>
+      ${rowsHtml(groups[c])}
+    `).join('') || `<div class="lib-empty">${t('libNoResults')}</div>`;
+  } else {
+    const arr = all.filter(w=> wordCategory(w[0])===cat);
+    body = arr.length===0 ? `<div class="lib-empty">${t('libNoResults')}</div>` : rowsHtml(arr);
+  }
+  return `<div class="app-shell">
+    ${topbar()}
+    <h1 class="disp" style="font-size:22px; margin-bottom:4px;">${t('library')}</h1>
+    <div class="onb-sub" style="margin-bottom:18px; text-align:left;">${langLabel()}</div>
+    <input class="lib-search" placeholder="${t('libSearchPh')}" value="${esc(S.libQuery)}" oninput="App.setLibQuery(this.value)">
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+      ${cats.map(c=>`<button class="pill-btn ${cat===c?'active':''}" style="${cat===c?'background:var(--grad-1); color:#0a0b0f; border-color:transparent;':''}" onclick="App.setLibCat('${c}')">${c==='all'?t('catAll'):t(CAT_KEY[c])}</button>`).join('')}
+    </div>
+    ${body}
+  </div>`;
+}
+
+/* ---------- RATING (public leaderboard — everyone sees names + XP, never emails) ---------- */
+function renderRating(){
+  if(S.ratingLoading){
+    return `<div class="app-shell">
+      ${topbar()}
+      <h1 class="disp" style="font-size:22px; margin-bottom:20px;">${t('ratingTitle')}</h1>
+      <div class="onb-sub">${t('uploading')}</div>
+    </div>`;
+  }
+  const rows = (S.ratingRaw && S.ratingRaw.users ? S.ratingRaw.users.slice() : [])
+    .sort((a,b)=> b.xp-a.xp);
+  const myIdx = S.user ? rows.findIndex(u=>u.email===S.user.email) : -1;
+  return `<div class="app-shell">
+    ${topbar()}
+    <div class="topbar" style="margin-bottom:14px;">
+      <h1 class="disp" style="font-size:22px;">${t('ratingTitle')}</h1>
+      <button class="pill-btn" onclick="App.openRating()">↻ ${t('adminRefresh')}</button>
+    </div>
+    <div class="onb-sub" style="margin-bottom:16px; text-align:left;">${t('ratingSub')}${myIdx>=0?` — #${myIdx+1}`:''}</div>
+    ${S.ratingErr ? `<div class="err">${esc(S.ratingErr)}</div>` : ''}
+    ${rows.length===0 ? `<div class="lib-empty">${t('ratingEmpty')}</div>` : rows.map((u,i)=>`
+      <div class="admin-row glass ${i<3?'rank-'+(i+1):''}" ${S.user && u.email===S.user.email?'style="border-color:var(--violet);"':''}>
+        <div class="arank">${i+1}</div>
+        <div class="ainfo">
+          <div class="aname">${esc(u.name)} ${esc(u.surname)}${S.user && u.email===S.user.email?` · <span style="color:var(--violet);">${t('you')}</span>`:''}</div>
+        </div>
+        <div class="axp">${u.xp}<span>XP</span></div>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ---------- ADMIN ---------- */
+function renderAdmin(){
+  if(S.adminLoading){
+    return `<div class="app-shell">
+      ${topbar()}
+      <h1 class="disp" style="font-size:22px; margin-bottom:20px;">${t('adminTitle')}</h1>
+      <div class="onb-sub">${t('uploading')}</div>
+    </div>`;
+  }
+  const rows = adminLeaderboard();
+  const periods = [
+    {id:'day', key:'periodDay'}, {id:'week', key:'periodWeek'},
+    {id:'month', key:'periodMonth'}, {id:'all', key:'periodAll'}
+  ];
+  return `<div class="app-shell">
+    ${topbar()}
+    <div class="topbar" style="margin-bottom:14px;">
+      <h1 class="disp" style="font-size:22px;">${t('adminTitle')}</h1>
+      <button class="pill-btn" onclick="App.refreshAdmin()">↻ ${t('adminRefresh')}</button>
+    </div>
+    <div class="streak-row">
+      <div class="stat-chip glass"><div class="num">${rows.length}</div><div class="lbl">${t('adminTotalUsers')}</div></div>
+      <div class="stat-chip glass"><div class="num">${rows.reduce((s,u)=>s+u.xp,0)}</div><div class="lbl">${t('totalXp')}</div></div>
+    </div>
+    <div class="segmented" style="margin:20px 0 16px;">
+      ${periods.map(p=>`<button class="seg-opt ${S.adminPeriod===p.id?'active':''}" onclick="App.setAdminPeriod('${p.id}')">${t(p.key)}</button>`).join('')}
+    </div>
+    ${S.adminErr ? `<div class="err">${esc(S.adminErr)}</div>` : ''}
+    ${rows.length===0 ? `<div class="lib-empty">${t('adminNoUsers')}</div>` : rows.map((u,i)=>`
+      <div class="admin-row glass ${i<3?'rank-'+(i+1):''}">
+        <div class="arank">${i+1}</div>
+        <div class="ainfo">
+          <div class="aname">${esc(u.name)} ${esc(u.surname)}</div>
+          <div class="ameta">${esc(u.email)} · ${t('adminRegisteredOn')} ${fmtDate(u.registeredAt)}</div>
+        </div>
+        <div class="axp">${u.periodXp}<span>XP</span></div>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ---------- BOTTOM NAV ---------- */
+const NAV_ITEMS=[
+  {id:'dashboard', ic:'🏠', key:'dashboard'},
+  {id:'library', ic:'📚', key:'library'},
+  {id:'rating', ic:'🏆', key:'rating'},
+  {id:'profile', ic:'👤', key:'profile'},
+  {id:'settings', ic:'⚙️', key:'settings'}
+];
+function renderNav(){
+  const active = ['dashboard','variants'].includes(S.screen) ? 'dashboard' : S.screen;
+  const items = isAdmin() ? [...NAV_ITEMS, {id:'admin', ic:'🛡️', key:'adminTitle'}] : NAV_ITEMS;
+  return `<div class="bottom-nav-wrap"><div class="bottom-nav" id="bottomNav">
+    <div class="nav-blob" id="navBlob"></div>
+    ${items.map(n=>`<button class="nav-item ${active===n.id?'active':''}" data-id="${n.id}" onclick="App.navTo('${n.id}')"><div class="ic">${n.ic}</div><div class="t">${t(n.key)}</div></button>`).join('')}
+  </div></div>`;
+}
+function positionBlob(){
+  const nav=document.getElementById('bottomNav'); const blob=document.getElementById('navBlob');
+  if(!nav||!blob) return;
+  const active = nav.querySelector('.nav-item.active');
+  if(!active) return;
+  blob.style.width = active.offsetWidth+'px';
+  blob.style.transform = `translateX(${active.offsetLeft - 8}px)`;
+}
+window.addEventListener('resize', ()=>{ if(document.getElementById('bottomNav')) positionBlob(); });
+
+/* ======================= APP CONTROLLER ======================= */
+const App = {
+  go, 
+  setAuthMode(m){ S.authMode=m; S.authErr=''; render(); },
+  togglePass(btn, id){
+    const inp = document.getElementById(id);
+    if(!inp) return;
+    const willShow = inp.type==='password';
+    inp.type = willShow ? 'text' : 'password';
+    btn.innerHTML = willShow ? ICON_EYE_OFF : ICON_EYE;
+    btn.setAttribute('aria-label', willShow ? t('hidePassword') : t('showPassword'));
+    inp.focus({preventScroll:true});
+  },
+  toggleLamp(){ S.lampLit=!S.lampLit; render(); },
+  lampGateHint(){ toast(t('lampRequired')); },
+  openForgot(){ S.resetEmail = S.loginEmail || ''; S.authErr=''; S.authMode='forgot'; render(); },
+  async doForgotPassword(e){
+    e.preventDefault();
+    if(S.busy) return;
+    if(!S.lampLit){ S.authErr=t('lampRequired'); render(); return; }
+    if(!S.resetEmail){ S.authErr=t('errFill'); render(); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.resetEmail)){ S.authErr=t('errEmail'); render(); return; }
+    S.busy=true; S.authErr=''; render();
+    const email = S.resetEmail.trim().toLowerCase();
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    S.busy=false;
+    if(error){ S.authErr=error.message; render(); return; }
+    toast(t('resetSent'));
+    go('auth', {authMode:'login'});
+  },
+  async doSetNewPassword(e){
+    e.preventDefault();
+    if(S.busy) return;
+    if(!S.newPassword){ S.authErr=t('errFill'); render(); return; }
+    if(S.newPassword.length<6){ S.authErr=t('errPassMin'); render(); return; }
+    S.busy=true; S.authErr=''; render();
+    const { error } = await sb.auth.updateUser({ password: S.newPassword });
+    S.busy=false;
+    if(error){ S.authErr=error.message; render(); return; }
+    S.newPassword=''; S.authErr='';
+    try{ await sb.auth.signOut(); }catch(err){}
+    toast(t('newPasswordSuccess'));
+    go('auth', {authMode:'login', user:null});
+  },
+  async doRegister(e){
+    e.preventDefault();
+    if(S.busy) return;
+    if(!S.lampLit){ S.authErr=t('lampRequired'); render(); return; }
+    if(!S.regName || !S.regSurname || !S.regEmail || !S.regPassword){ S.authErr=t('errFill'); render(); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.regEmail)){ S.authErr=t('errEmail'); render(); return; }
+    if(S.regPassword.length<6){ S.authErr=t('errPassMin'); render(); return; }
+    S.busy=true; S.authErr=''; render();
+    const email = S.regEmail.trim().toLowerCase();
+    const { data, error } = await sb.auth.signUp({ email, password: S.regPassword });
+    if(error){
+      S.busy=false;
+      S.authErr = /registered|exists/i.test(error.message) ? t('errEmailTaken') : error.message;
+      render(); return;
+    }
+    const uid = data.user ? data.user.id : (data.session && data.session.user.id);
+    if(!uid){
+      // Supabase project has "confirm email" turned on — no session/user id yet
+      S.busy=false; S.authErr='';
+      toast(t('checkEmailConfirm'));
+      go('auth', {authMode:'login'});
+      return;
+    }
+    const registeredAt = new Date().toISOString();
+    const progress = freshProgress(), stats = {correct:0,wrong:0,xp:0};
+    const { error: insErr } = await sb.from('profiles').insert({
+      id: uid, email, name:S.regName, surname:S.regSurname, registered_at: registeredAt,
+      progress, stats, avatar_hue:260, avatar_photo:null, ui_lang:S.uiLang, dark:S.dark
+    });
+    if(insErr){ S.busy=false; S.authErr=insErr.message; render(); return; }
+    S.user={ id:uid, name:S.regName, surname:S.regSurname, email, registeredAt: Date.now() };
+    S.progress = progress; S.stats = stats; S.avatarPhoto=null;
+    S.busy=false; S.authErr='';
+    go('onb-lang');
+  },
+  async doLogin(e){
+    e.preventDefault();
+    if(S.busy) return;
+    if(!S.lampLit){ S.authErr=t('lampRequired'); render(); return; }
+    if(!S.loginEmail || !S.loginPassword){ S.authErr=t('errFill'); render(); return; }
+    S.busy=true; S.authErr=''; render();
+    const email = S.loginEmail.trim().toLowerCase();
+    const { data, error } = await sb.auth.signInWithPassword({ email, password:S.loginPassword });
+    if(error){ S.busy=false; S.authErr=t('errBadLogin'); render(); return; }
+    const acc = await loadAccountById(data.user.id);
+    if(!acc){ S.busy=false; S.authErr=t('errNoAccount'); render(); return; }
+    S.user = { id:acc.id, name:acc.name, surname:acc.surname, email:acc.email, registeredAt: acc.registeredAt };
+    S.learnLang=acc.learnLang; S.declaredLevel=acc.declaredLevel; S.referral=acc.referral;
+    S.progress = acc.progress || freshProgress(); S.stats = acc.stats || {correct:0,wrong:0,xp:0};
+    S.avatarHue = acc.avatarHue ?? 260; S.avatarPhoto = acc.avatarPhoto || null;
+    S.uiLang = acc.uiLang || S.uiLang; S.dark = (acc.dark!==undefined && acc.dark!==null)? acc.dark : S.dark;
+    S.busy=false; S.authErr='';
+    toast(`${t('welcomeBack')}, ${acc.name}! / Welcome back, ${acc.name}!`);
+    go(acc.learnLang ? 'dashboard' : 'onb-lang');
+  },
+  chooseLang(l){ S.learnLang=l; persistAccount(); go('onb-level'); },
+  chooseLevel(l){ S.declaredLevel=l; persistAccount(); go('onb-ref'); },
+  chooseRef(r){ S.referral=r; persistAccount(); go('welcome'); },
+  finishOnboarding(){ persistAccount(); go('dashboard'); },
+  openLevel(l){ S.selectedLevel=l; go('variants'); },
+  startQuiz(level, variant){
+    const lvl = S.progress[S.learnLang].levels[level];
+    if(variant > lvl.unlockedVariant){ toast(t('variantLockedMsg')); return; }
+    const questions = buildQuiz(S.learnLang, level, variant);
+    S.quiz = { level, variant, questions, idx:0, correct:0, wrong:0, locked:false };
+    go('quiz');
+  },
+  answer(i){
+    const q=S.quiz; if(q.locked) return; q.locked=true;
+    const cur=q.questions[q.idx];
+    const chosen = cur.options[i];
+    const isCorrect = chosen===cur.answer;
+    document.querySelectorAll('.qopt').forEach((el,idx)=>{
+      if(cur.options[idx]===cur.answer) el.classList.add('correct');
+      else if(idx===i) el.classList.add('wrong');
+      else el.classList.add('dim');
+    });
+    if(isCorrect){ playCorrect(); q.correct++; S.stats.correct++; S.stats.xp+=2; } else { playWrong(); q.wrong++; S.stats.wrong++; }
+    setTimeout(()=>{
+      q.idx++;
+      if(q.idx>=q.questions.length){ App.finishQuiz(); } else { q.locked=false; render(); }
+    }, 650);
+  },
+  finishQuiz(){
+    const q=S.quiz; const lvl = S.progress[S.learnLang].levels[q.level];
+    lvl.variants[q.variant].done = q.correct>=PASS_THRESHOLD ? true : lvl.variants[q.variant].done;
+    lvl.variants[q.variant].score = Math.max(lvl.variants[q.variant].score||0, q.correct);
+    if(q.correct>=PASS_THRESHOLD){
+      if(q.variant < NUM_VARIANTS && lvl.unlockedVariant===q.variant){ lvl.unlockedVariant=q.variant+1; toast(t('nextVariant')); }
+      const allDone = Object.values(lvl.variants).every(v=>v.done);
+      const prog = S.progress[S.learnLang];
+      if(allDone && q.level===prog.unlockedLevel && prog.unlockedLevel<NUM_LEVELS){ prog.unlockedLevel++; toast(t('nextLevel')); }
+    }
+    if(q.correct>0 && S.user) appendXpLog(S.user.email, q.correct*2);
+    persistAccount();
+    go('results');
+  },
+  exitQuiz(){ go('variants'); },
+  afterResults(){
+    const q=S.quiz;
+    if(q.correct>=PASS_THRESHOLD) go('variants'); else App.startQuiz(q.level, q.variant);
+  },
+  navTo(id){ if(id==='admin'){ App.openAdmin(); } else if(id==='rating'){ App.openRating(); } else { go(id); } },
+  async openRating(){
+    S.screen='rating'; S.ratingLoading=true; S.ratingErr=''; render();
+    try{
+      const rows = await fetchAllProfiles();
+      const users = rows.map(row=>({
+        name: row.name||'', surname: row.surname||'', email: row.email,
+        xp: (row.stats && row.stats.xp) || 0
+      }));
+      S.ratingRaw = { users };
+    }catch(e){ S.ratingErr = 'Хатогӣ ҳангоми боркунии маълумот.'; S.ratingRaw = { users:[] }; }
+    S.ratingLoading=false; render();
+  },
+  setLibTier(tier){ S.libTier=tier; render(); },
+  setLibCat(c){ S.libCat=c; render(); },
+  setLibQuery(v){ S.libQuery=v; render(); },
+  async openAdmin(){
+    S.screen='admin'; S.adminLoading=true; S.adminErr=''; render();
+    try{
+      const rows = await fetchAllProfiles();
+      const users=[]; const events={};
+      const evLists = await Promise.all(rows.map(row=>fetchXpLog(row.email)));
+      rows.forEach((row, i)=>{
+        users.push({
+          name: row.name||'', surname: row.surname||'', email: row.email,
+          xp: (row.stats && row.stats.xp) || 0,
+          correct: (row.stats && row.stats.correct) || 0,
+          wrong: (row.stats && row.stats.wrong) || 0,
+          learnLang: row.learn_lang || '—',
+          registeredAt: row.registered_at ? new Date(row.registered_at).getTime() : null
+        });
+        events[row.email] = evLists[i];
+      });
+      S.adminRaw = { users, events };
+    }catch(e){ S.adminErr = 'Хатогӣ ҳангоми боркунии маълумот.'; S.adminRaw = { users:[], events:{} }; }
+    S.adminLoading=false; render();
+  },
+  setAdminPeriod(p){ S.adminPeriod=p; render(); },
+  refreshAdmin(){ App.openAdmin(); },
+  editName(){ S.editingName=true; S.nameDraft = S.user.name+' '+S.user.surname; render(); },
+  saveName(){
+    const parts=S.nameDraft.trim().split(/\s+/);
+    S.user.name = parts[0]||S.user.name; S.user.surname = parts.slice(1).join(' ')||S.user.surname;
+    S.editingName=false; persistAccount(); render();
+  },
+  cycleAvatar(){ S.avatarHue=(S.avatarHue+47)%360; S.avatarPhoto=null; persistAccount(); render(); },
+  pickPhoto(){ document.getElementById('photoInput').click(); },
+  onPhotoChosen(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const size=200;
+        const canvas=document.createElement('canvas'); canvas.width=size; canvas.height=size;
+        const ctx=canvas.getContext('2d');
+        const scale = Math.max(size/img.width, size/img.height);
+        const w=img.width*scale, h=img.height*scale;
+        ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        S.avatarPhoto = canvas.toDataURL('image/jpeg', 0.85);
+        persistAccount(); render();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  },
+  toggleDark(){ S.dark=!S.dark; persistAccount(); render(); },
+  setUiLang(l){ S.uiLang=l; persistAccount(); render(); },
+  toggleSound(){ S.soundOn=!S.soundOn; render(); },
+  toggleChangePass(){ S.showChangePass=!S.showChangePass; S.settingsPassErr=''; S.settingsNewPass=''; render(); },
+  async doChangePassword(){
+    if(S.settingsPassBusy) return;
+    if(!S.settingsNewPass || S.settingsNewPass.length<6){ S.settingsPassErr=t('errPassMin'); render(); return; }
+    S.settingsPassBusy=true; S.settingsPassErr=''; render();
+    const { error } = await sb.auth.updateUser({ password:S.settingsNewPass });
+    S.settingsPassBusy=false;
+    if(error){ S.settingsPassErr=error.message; render(); return; }
+    S.settingsNewPass=''; S.showChangePass=false;
+    toast(t('passChangedOk'));
+    render();
+  },
+  async logout(){
+    try{ await sb.auth.signOut(); }catch(e){}
+    S = { ...S, screen:'auth', user:null, authMode:'login', authErr:'',
+      regName:'', regSurname:'', regEmail:'', regPassword:'', loginEmail:'', loginPassword:'',
+      learnLang:null, declaredLevel:null, referral:null, progress:freshProgress(),
+      stats:{correct:0,wrong:0,xp:0}, avatarHue:260, avatarPhoto:null, quiz:null, selectedLevel:null };
+    render();
+  }
+};
+
+/* ---------- boot: restore an existing Supabase session, if any ---------- */
+async function boot(){
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session && session.user){
+      const acc = await loadAccountById(session.user.id);
+      if(acc){
+        S.user = { id:acc.id, name:acc.name, surname:acc.surname, email:acc.email, registeredAt: acc.registeredAt };
+        S.learnLang=acc.learnLang; S.declaredLevel=acc.declaredLevel; S.referral=acc.referral;
+        S.progress = acc.progress || freshProgress(); S.stats = acc.stats || {correct:0,wrong:0,xp:0};
+        S.avatarHue = acc.avatarHue ?? 260; S.avatarPhoto = acc.avatarPhoto || null;
+        S.uiLang = acc.uiLang || S.uiLang; S.dark = (acc.dark!==undefined && acc.dark!==null)? acc.dark : S.dark;
+        S.screen = acc.learnLang ? 'dashboard' : 'onb-lang';
+      }
+    }
+  }catch(e){ /* no session / offline — fall back to the auth screen */ }
+  render();
+}
+boot();
+</script>
+</body>
+</html>
