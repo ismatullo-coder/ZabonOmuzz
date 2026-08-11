@@ -36,6 +36,48 @@ html.light{
   color-scheme: light;
 }
 *{box-sizing:border-box; margin:0; padding:0;}
+/* ============ EMOJI + RESPONSIVE FIXES ============ */
+img.emoji { width:1.15em; height:1.15em; vertical-align:middle; display:inline-block; }
+img { max-width:100%; height:auto; }
+.bottom-nav-wrap{ bottom:12px; }
+.bottom-nav{ gap:4px; padding:8px; max-width:calc(100vw - 24px); overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.bottom-nav::-webkit-scrollbar{ display:none; }
+.nav-item{ width:58px; height:50px; border-radius:18px; }
+.nav-item .ic{ font-size:17px; }
+.nav-item .t{ font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; padding:0 2px; }
+.nav-blob{ border-radius:18px; }
+.battle-row{ flex-wrap:nowrap; overflow:hidden; }
+.battle-row .ainfo{ min-width:0; }
+.battle-row .aname{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.battle-row button, .battle-row .pill-btn{ flex-shrink:0; white-space:nowrap; }
+.home-hero{ overflow:hidden; }
+.home-rank-row{ min-width:0; }
+.home-rank-row .hrn{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-chip{ min-width:0; overflow:hidden; }
+.stat-chip .num{ font-size:18px; }
+.stat-chip .num img.emoji{ width:1em; height:1em; }
+.profile-head{ overflow:hidden; }
+.profile-head .avatar{ width:80px; height:80px; font-size:28px; flex-shrink:0; }
+.mywords-tile{ overflow:hidden; }
+.mwt-ic{ flex-shrink:0; }
+.mwt-info{ min-width:0; }
+.mwt-t{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cw-grid{ max-width:100%; }
+.cw-cell{ width:32px; height:32px; }
+.assemble-slots{ gap:5px; }
+.asm-slot{ width:30px; height:36px; font-size:14px; }
+.assemble-tiles{ gap:6px; }
+.asm-tile{ width:36px; height:40px; font-size:14px; }
+@media (max-width: 380px){
+  .nav-item{ width:52px; height:46px; }
+  .nav-item .ic{ font-size:15px; }
+  .nav-item .t{ font-size:8px; }
+  .stat-chip{ padding:12px 8px; }
+  .stat-chip .num{ font-size:16px; }
+  .home-action{ padding:14px 16px; font-size:13px; }
+  .app-shell{ padding:16px 14px 120px; }
+}
+
 html,body{height:100%;}
 body{
   font-family:var(--font-b); background:var(--bg); color:var(--text);
@@ -386,6 +428,7 @@ html.light .toggle-switch{ box-shadow: inset 0 2px 5px rgba(30,34,50,.18); }
 .course-tool-btn{ flex:1; padding:14px 12px; border-radius:15px; font-weight:700; font-size:13px; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .course-tool-btn .ic{ font-size:20px; }
 </style>
+<base target="_blank">
 </head>
 <body>
 <div class="backdrop"></div>
@@ -3556,7 +3599,7 @@ function renderHome(){
   const top = (S.ratingRaw && S.ratingRaw.users ? S.ratingRaw.users.slice().sort((a,b)=>b.xp-a.xp) : []).slice(0,3);
   return `<div class="app-shell">
     ${topbar()}
-    <h1 class="disp" style="font-size:24px; margin-bottom:18px;">${t('greetingName')}, ${S.user?esc(S.user.name):''} 👋</h1>
+    <h1 class="disp" style="font-size:24px; margin-bottom:18px;">${t('greetingName')}, ${S.user?esc(S.user.name):''} <span style="font-size:1em; line-height:1">👋</span></h1>
     <div class="home-hero glass">
       <div class="section-head" style="margin:0 0 6px;"><h2>${t('ratingTitle')}</h2><button class="pill-btn" onclick="App.navTo('rating')">${t('rating')} →</button></div>
       ${top.length? top.map((u,i)=>`<div class="home-rank-row"><div class="hrk">${i+1}</div><div class="hrn">${esc(u.name)} ${esc(u.surname)}</div><div class="hrx">${u.xp} XP</div></div>`).join('') : `<div class="onb-sub" style="margin:6px 0 0;">${t('ratingEmpty')}</div>`}
@@ -3675,7 +3718,7 @@ function renderProfile(){
   return `<div class="app-shell">
     ${topbar()}
     <div class="profile-head glass" style="padding:34px 20px;">
-      <div class="avatar" style="${S.avatarPhoto?'':`background:linear-gradient(135deg, hsl(${S.avatarHue} 80% 65%), hsl(${(S.avatarHue+70)%360} 80% 55%));`} cursor:pointer; overflow:hidden;" onclick="App.pickPhoto()">${S.avatarPhoto?`<img src="${S.avatarPhoto}" style="width:100%;height:100%;object-fit:cover;">`:initials()}</div>
+      <div class="avatar" style="${S.avatarPhoto?'':`background:linear-gradient(135deg, hsl(${S.avatarHue} 80% 65%), hsl(${(S.avatarHue+70)%360} 80% 55%));`} cursor:pointer; overflow:hidden;" onclick="App.pickPhoto()">${S.avatarPhoto?`<img src="${S.avatarPhoto}" style="width:100%;height:100%;object-fit:cover; display:block;">`:initials()}</div>
       <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="App.onPhotoChosen(this)">
       ${S.editingName ? `
         <div class="profile-name-edit">
@@ -4024,7 +4067,7 @@ function renderBattle(){
     return `<div class="app-shell">${topbar()}<h1 class="disp" style="font-size:22px; margin-bottom:20px;">${t('battle')}</h1><div class="onb-sub">${t('uploading')}</div></div>`;
   }
   const b = S.battleData;
-  const row = (name, sub, action)=> `<div class="battle-row glass"><div class="ainfo"><div class="aname">${esc(name)}</div><div class="ameta">${sub}</div></div>${action||''}</div>`;
+  const row = (name, sub, action)=> `<div class="battle-row glass" style="${action?'':'opacity:.5;'}"><div class="ainfo"><div class="aname">${esc(name)}</div><div class="ameta">${sub}</div></div>${action||''}</div>`;
   return `<div class="app-shell">
     ${topbar()}
     <div class="topbar" style="margin-bottom:14px;"><h1 class="disp" style="font-size:22px;">${t('battle')}</h1><button class="pill-btn" onclick="App.openBattle()">↻ ${t('adminRefresh')}</button></div>
