@@ -531,6 +531,7 @@ const I18N = {
     contactUs:'Алоқа бо админ', phoneCall:'Занг',     copiedLink:'Пайванд нусха шуд',
     profileShared:'Профил фиристода шуд', moreWords:'Бештар', shareLink:'Силкаи профил',
     shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
+    socialFail:'Лайк/подпис сабт нашуд. SQL-ро дар Supabase иҷро кунед.',
     catAnimals:'Ҳайвонот', catBody:'Бадан', catTransport:'Нақлиёт', catSports:'Варзиш',
     catWeather:'Обу ҳаво', catNumbers:'Рақамҳо', catTravel:'Сафар', catMusic:'Мусиқӣ',
     catCity:'Шаҳр', catKitchen:'Ошхона', catJobs:'Касбҳо', catTech:'Технология',
@@ -612,6 +613,7 @@ const I18N = {
     contactUs:'Связь с админом', phoneCall:'Звонок',     copiedLink:'Ссылка скопирована',
     profileShared:'Профиль отправлен', moreWords:'Ещё', shareLink:'Ссылка профиля',
     shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
+    socialFail:'Лайк/подписка не сохранились. Выполните SQL в Supabase.',
     catAnimals:'Животные', catBody:'Тело', catTransport:'Транспорт', catSports:'Спорт',
     catWeather:'Погода', catNumbers:'Числа', catTravel:'Путешествия', catMusic:'Музыка',
     catCity:'Город', catKitchen:'Кухня', catJobs:'Профессии', catTech:'Технологии',
@@ -693,6 +695,7 @@ const I18N = {
     contactUs:'Contact admin', phoneCall:'Call',     copiedLink:'Link copied',
     profileShared:'Profile shared', moreWords:'More', shareLink:'Profile link',
     shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
+    socialFail:'Like/follow did not save. Run the SQL in Supabase.',
     catAnimals:'Animals', catBody:'Body', catTransport:'Transport', catSports:'Sports',
     catWeather:'Weather', catNumbers:'Numbers', catTravel:'Travel', catMusic:'Music',
     catCity:'City', catKitchen:'Kitchen', catJobs:'Jobs', catTech:'Technology',
@@ -13582,7 +13585,16 @@ sb.auth.onAuthStateChange((event)=>{
   if(event==='PASSWORD_RECOVERY'){ S.screen='newpass'; S.authErr=''; render(); }
 });
 
-function accountKey(email){ return String(email).trim().toLowerCase(); }
+function accountKey(email){ return String(email||'').trim().toLowerCase(); }
+function emailsEq(a,b){ return accountKey(a)===accountKey(b); }
+function socialHas(arr, email){ return (arr||[]).some(x=>emailsEq(x, email)); }
+function applyViewStats(email, stats){
+  if(!stats || !S.viewUser) return;
+  if(emailsEq(S.viewUser.email, email)){
+    S.viewUser.stats = stats;
+    if(stats.xp!=null) S.viewUser.xp = stats.xp;
+  }
+}
 
 function profileRowToAccount(row){
   return {
@@ -13761,7 +13773,13 @@ function poolBySelectedCats(){
 function applyTheme(){ document.documentElement.classList.toggle('light', !S.dark); }
 function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function go(screen, extra){ S.screen=screen; Object.assign(S, extra||{}); render(); window.scrollTo({top:0,behavior:'smooth'}); if(S.user && (screen==='dashboard'||screen==='rating')){ App.warmSocial(); } }
+function go(screen, extra){
+  S.screen=screen; Object.assign(S, extra||{});
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(S.user && (screen==='dashboard'||screen==='rating')){ App.warmSocial(); }
+  if(S.user && screen==='profile'){ App.refreshOwnProfile(); }
+}
 
 /* ---------- render root ---------- */
 function render(){
@@ -14126,8 +14144,8 @@ function renderUserProfile(){
   const st = Object.assign(freshStats(), u.stats||{});
   const soc = socialStatsOf(st);
   const me = S.user && S.user.email;
-  const liked = (st.likedBy||[]).includes(me);
-  const followed = (st.followers||[]).includes(me);
+  const liked = socialHas(st.likedBy, me);
+  const followed = socialHas(st.followers, me);
   const comments = (st.comments||[]).slice().reverse();
   const av = u.avatarPhoto
     ? `<img src="${u.avatarPhoto}" alt="">`
@@ -14655,7 +14673,17 @@ window.addEventListener('resize', ()=>{ if(document.getElementById('bottomNav'))
 
 /* ======================= APP CONTROLLER ======================= */
 const App = {
-  go, 
+  go,
+  async refreshOwnProfile(){
+    if(!S.user || !S.user.id) return;
+    try{
+      const acc = await loadAccountById(S.user.id);
+      if(!acc) return;
+      S.stats = Object.assign(freshStats(), acc.stats||{});
+      if(acc.avatarPhoto!==undefined) S.avatarPhoto = acc.avatarPhoto || S.avatarPhoto;
+      if(S.screen==='profile') render();
+    }catch(e){}
+  }, 
   setAuthMode(m){ S.authMode=m; S.authErr=''; render(); },
   togglePass(btn, id){
     const inp = document.getElementById(id);
@@ -15003,13 +15031,10 @@ const App = {
     }
     if(error){ toast(error.message||'Хатогӣ'); return; }
     try{
-      const acc = await loadAccountByEmail(email);
-      if(acc){
-        const stats = Object.assign(freshStats(), acc.stats||{});
-        stats.inbox = (stats.inbox||[]).slice(0,39);
-        stats.inbox.unshift({ type:'battle_invite', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() });
-        await sb.from('profiles').update({ stats }).eq('email', accountKey(email));
-      }
+      await sb.rpc('push_profile_inbox', {
+        target_email: accountKey(email),
+        item: { type:'battle_invite', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() }
+      });
     }catch(e){}
     toast(t('battleSent'));
     App.openBattle();
@@ -15031,13 +15056,10 @@ const App = {
     if(!b){ toast('Хатогӣ'); return; }
     await sb.from('battles').update({ status:'declined' }).eq('id', id);
     try{
-      const acc = await loadAccountByEmail(b.challenger_email);
-      if(acc){
-        const stats = Object.assign(freshStats(), acc.stats||{});
-        stats.inbox = (stats.inbox||[]).slice(0,39);
-        stats.inbox.unshift({ type:'battle_declined', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() });
-        await sb.from('profiles').update({ stats }).eq('email', accountKey(b.challenger_email));
-      }
+      await sb.rpc('push_profile_inbox', {
+        target_email: accountKey(b.challenger_email),
+        item: { type:'battle_declined', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() }
+      });
     }catch(e){}
     toast(t('battleDecline'));
     App.openBattle();
@@ -15053,8 +15075,81 @@ const App = {
     if(!acc) return null;
     const stats = Object.assign(freshStats(), acc.stats||{});
     mutator(stats, acc);
-    await sb.from('profiles').update({ stats }).eq('email', accountKey(email));
+    const { error } = await sb.from('profiles').update({ stats }).eq('email', accountKey(email));
+    if(error) return null;
     return stats;
+  },
+  async toggleLike(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
+    if(S._socialBusy) return;
+    const me = accountKey(S.user.email);
+    const target = accountKey(email);
+    S._socialBusy = true;
+    if(S.viewUser && emailsEq(S.viewUser.email, target)){
+      const st = Object.assign(freshStats(), S.viewUser.stats||{});
+      st.likedBy = (st.likedBy||[]).slice();
+      const i = st.likedBy.findIndex(x=>emailsEq(x, me));
+      if(i>=0) st.likedBy.splice(i,1); else st.likedBy.push(me);
+      S.viewUser.stats = st;
+      render();
+    }
+    const { data, error } = await sb.rpc('toggle_like', { target_email: target });
+    S._socialBusy = false;
+    if(error || !data){
+      toast(t('socialFail'));
+      if(S.viewUser && emailsEq(S.viewUser.email, target)) App.openUserProfile(S.viewUser.email || S.viewUser.id);
+      return;
+    }
+    applyViewStats(target, data);
+    render();
+  },
+  async toggleFollow(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
+    if(S._socialBusy) return;
+    if(emailsEq(email, S.user.email)) return;
+    const me = accountKey(S.user.email);
+    const target = accountKey(email);
+    S._socialBusy = true;
+    if(S.viewUser && emailsEq(S.viewUser.email, target)){
+      const st = Object.assign(freshStats(), S.viewUser.stats||{});
+      st.followers = (st.followers||[]).slice();
+      const i = st.followers.findIndex(x=>emailsEq(x, me));
+      if(i>=0) st.followers.splice(i,1); else st.followers.push(me);
+      S.viewUser.stats = st;
+      S.stats.following = S.stats.following||[];
+      const j = S.stats.following.findIndex(x=>emailsEq(x, target));
+      if(i>=0 && j>=0) S.stats.following.splice(j,1);
+      else if(i<0 && j<0) S.stats.following.push(target);
+      render();
+    }
+    const { data, error } = await sb.rpc('toggle_follow', { target_email: target });
+    S._socialBusy = false;
+    if(error || !data){
+      toast(t('socialFail'));
+      if(S.viewUser && emailsEq(S.viewUser.email, target)) App.openUserProfile(S.viewUser.email || S.viewUser.id);
+      return;
+    }
+    if(data.their) applyViewStats(target, data.their);
+    if(data.mine && data.mine.following) S.stats.following = data.mine.following;
+    render();
+  },
+  async sendComment(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
+    const text = (S.commentDraft||'').trim();
+    if(!text) return;
+    if(S._socialBusy) return;
+    S._socialBusy = true;
+    const target = accountKey(email);
+    const { data, error } = await sb.rpc('add_profile_comment', {
+      target_email: target,
+      comment_text: text,
+      from_name: (S.user.name+' '+S.user.surname).trim()
+    });
+    S._socialBusy = false;
+    if(error || !data){ toast(t('socialFail')); return; }
+    S.commentDraft='';
+    applyViewStats(target, data);
+    render();
   },
   async openUserProfile(key){
     if(!key) return;
@@ -15098,48 +15193,6 @@ const App = {
     };
     S.commentDraft='';
     go('userprofile');
-  },
-  async toggleLike(email){
-    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
-    const me = S.user.email;
-    const stats = await App.patchProfileStats(email, (st)=>{
-      st.likedBy = st.likedBy||[];
-      const i = st.likedBy.indexOf(me);
-      if(i>=0) st.likedBy.splice(i,1); else st.likedBy.push(me);
-    });
-    if(stats && S.viewUser && S.viewUser.email===email) S.viewUser.stats = stats;
-    render();
-  },
-  async toggleFollow(email){
-    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
-    const me = S.user.email;
-    const their = await App.patchProfileStats(email, (st)=>{
-      st.followers = st.followers||[];
-      const i = st.followers.indexOf(me);
-      if(i>=0) st.followers.splice(i,1); else st.followers.push(me);
-    });
-    await App.patchProfileStats(me, (st)=>{
-      st.following = st.following||[];
-      const i = st.following.indexOf(email);
-      if(i>=0) st.following.splice(i,1); else st.following.push(email);
-      S.stats.following = st.following;
-    });
-    persistAccount();
-    if(their && S.viewUser && S.viewUser.email===email) S.viewUser.stats = their;
-    render();
-  },
-  async sendComment(email){
-    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
-    const text = (S.commentDraft||'').trim();
-    if(!text) return;
-    const stats = await App.patchProfileStats(email, (st)=>{
-      st.comments = st.comments||[];
-      st.comments.push({ from:S.user.email, name:(S.user.name+' '+S.user.surname).trim(), text, ts:Date.now() });
-      if(st.comments.length>80) st.comments = st.comments.slice(-80);
-    });
-    S.commentDraft='';
-    if(stats && S.viewUser && S.viewUser.email===email) S.viewUser.stats = stats;
-    render();
   },
   async shareProfile(email, name, id){
     const url = profileShareUrl(id, email);
