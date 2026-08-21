@@ -1299,7 +1299,7 @@ const CAT_KEY = { home:'catHome', family:'catFamily', nature:'catNature', food:'
 const WORD_CAT = {
   // tier a — everyday concrete vocabulary
   'китоб':'school','об':'food','хона':'home','мактаб':'school','гурба':'family','саг':'family','дӯст':'family',
-  'модар':'family','падар':'family','офтоб':'nature','моҳ':'nature','осмон':'nature','нон':'food','себ':'food',
+  'модар':'family','падар':'family','офтоб':'nature','моҳ':'nature','осмон':'nature','нон':'food','себ':'fruits',
   'шаҳр':'nature','деҳа':'nature','кӯча':'nature','дарахт':'nature','гул':'nature','барф':'nature','борон':'nature',
   'бод':'nature','замин':'nature','шарбат':'food','чой':'food','шир':'food','гӯшт':'food','биринҷ':'food',
   'картошка':'food','пиёз':'food','сабзӣ':'food','мошин':'home','роҳ':'nature','дар':'home','тиреза':'home',
@@ -1401,10 +1401,10 @@ const WORD_CAT = {
   'намак':'food',
   'шакар':'food',
   'асал':'food',
-  'ангур':'food',
-  'тарбуз':'food',
-  'харбуза':'food',
-  'лимӯ':'food',
+  'ангур':'fruits',
+  'тарбуз':'fruits',
+  'харбуза':'fruits',
+  'лимӯ':'fruits',
   'помидор':'food',
   'бодиринг':'food',
   'карам':'food',
@@ -1690,7 +1690,7 @@ const LEVEL_BAND_KEY = { beginner:'lvlBeginner', intermediate:'lvlIntermediate',
 /* ---------- NEW: labels for the "XP by activity" breakdown on the rating table ---------- */
 const ACTIVITY_KEY = { translate:'qtypeTranslate', fillblank:'qtypeFillblank', grammar:'qtypeGrammar', synonym:'qtypeSynonym', antonym:'qtypeAntonym', order:'qtypeOrder', assemble:'assembleTitle' };
 const EXTRA_WORDS = [
-  ['себ','apple','яблоко','[ˈæpl]','food','🍎'],
+  ['себ','apple','яблоко','[ˈæpl]','fruits','🍎'],
   ['китоб','book','книга','[bʊk]','school','📖'],
   ['гурба','cat','кошка','[kæt]','animals','🐱'],
   ['саг','dog','собака','[dɒɡ]','animals','🐶'],
@@ -1869,13 +1869,38 @@ const EXTRA_WORDS = [
   ['харбуза','melon','дыня','[ˈmelən]','fruits','🍈'],
   ['лимӯ','lemon','лимон','[ˈlemən]','fruits','🍋'],
   ['норанҷ','orange','апельсин','[ˈɒrɪndʒ]','fruits','🍊'],
-  ['ананас','pineapple','pineapple','[ˈpaɪnæpl]','fruits','🍍'],
-  ['банан','banana','banana','[bəˈnɑːnə]','fruits','🍌'],
+  ['ананас','pineapple','ананас','[ˈpaɪnæpl]','fruits','🍍'],
+  ['банан','banana','банан','[bəˈnɑːnə]','fruits','🍌'],
   ['тут','mulberry','шелковица','[ˈmʌlbəri]','fruits','🫐'],
   ['олу','plum','слива','[plʌm]','fruits','🟣'],
   ['шафтолу','peach','персик','[piːtʃ]','fruits','🍑'],
-  ['гелос','cherry','вишня','[ˈtʃeri]','fruits','🍒'],
+  ['гелос','sweet cherry','черешня','[swiːt ˈtʃeri]','fruits','🍒'],
   ['заминбиёр','strawberry','клубника','[ˈstrɔːbəri]','fruits','🍓'],
+  ['нок','pear','груша','[peə]','fruits','🍐'],
+  ['зардолу','apricot','абрикос','[ˈeɪprɪkɒt]','fruits','🟠'],
+  ['анор','pomegranate','гранат','[ˈpɒmɪɡrænɪt]','fruits','🔴'],
+  ['анҷир','fig','инжир','[fɪɡ]','fruits','🟤'],
+  ['биҳӣ','quince','айва','[kwɪns]','fruits','🟡'],
+  ['олуболу','sour cherry','вишня','[saʊə ˈtʃeri]','fruits','🍒'],
+  ['олуча','cherry plum','алыча','[ˈtʃeri plʌm]','fruits','🟠'],
+  ['мандарин','mandarin','мандарин','[ˈmændərɪn]','fruits','🍊'],
+  ['лайм','lime','лайм','[laɪm]','fruits','🍋'],
+  ['грейпфрут','grapefruit','грейпфрут','[ˈɡreɪpfruːt]','fruits','🩷'],
+  ['хурмо','persimmon','хурма','[pəˈsɪmən]','fruits','🟠'],
+  ['финик','date','финик','[deɪt]','fruits','🌴'],
+  ['киви','kiwi','киви','[ˈkiːwiː]','fruits','🥝'],
+  ['манго','mango','манго','[ˈmæŋɡəʊ]','fruits','🥭'],
+  ['кокос','coconut','кокос','[ˈkəʊkənʌt]','fruits','🥥'],
+  ['авокадо','avocado','авокадо','[ˌævəˈkɑːdəʊ]','fruits','🥑'],
+  ['папайя','papaya','папайя','[pəˈpaɪə]','fruits','🟠'],
+  ['малина','raspberry','малина','[ˈrɑːzbəri]','fruits','🩷'],
+  ['қароқат','blackcurrant','смородина','[ˈblækˌkʌrənt]','fruits','🫐'],
+  ['кабудбут','blueberry','голубика','[ˈbluːbəri]','fruits','🫐'],
+  ['сиёҳбут','blackberry','ежевика','[ˈblækbəri]','fruits','🫐'],
+  ['гуава','guava','гуава','[ˈɡwɑːvə]','fruits','🟢'],
+  ['личӣ','lychee','личи','[ˈliːtʃi]','fruits','🔴'],
+  ['нектарин','nectarine','нектарин','[ˈnektəriːn]','fruits','🍑'],
+  ['помело','pomelo','помело','[ˈpɒmələʊ]','fruits','🍋'],
   ['чормағз','walnut','грецкий орех','[ˈwɔːlnʌt]','food','🥜'],
   ['шоколад','chocolate','chocolate','[ˈtʃɒklət]','food','🍫'],
   ['яхмос','ice cream','мороженое','[aɪs kriːm]','food','🍦'],
@@ -2532,7 +2557,7 @@ const EXTRA_WORDS = [
 ];
 
 EXTRA_WORDS.forEach(function(w){
-  if(w[4] && !WORD_CAT[w[0]]) WORD_CAT[w[0]] = w[4];
+  if(w[4]) WORD_CAT[w[0]] = w[4];
   if(w[5] && !EMOJI_MAP[w[0]]) EMOJI_MAP[w[0]] = w[5];
 });
 
@@ -2660,7 +2685,36 @@ const SENTENCES = {
 const NUM_LEVELS = 100;
 const NUM_VARIANTS = 10;
 const QUESTIONS_PER_VARIANT = 25;
-const PASS_THRESHOLD = 17; // need 17/25 (68%) correct to pass a variant
+const PASS_THRESHOLD = 17; // 68% of a full 25-question set
+function passMark(total){
+  const n = Math.max(1, Number(total)||QUESTIONS_PER_VARIANT);
+  return Math.max(1, Math.ceil(n * 0.68));
+}
+function quizPassed(q){
+  if(!q) return false;
+  const n = (q.questions && q.questions.length) || QUESTIONS_PER_VARIANT;
+  return (q.correct||0) >= passMark(n);
+}
+function nNum(v, d){ const x = Number(v); return Number.isFinite(x) ? x : (d||0); }
+function normalizeProgress(bundle){
+  if(!bundle) return bundle;
+  ['en','ru'].forEach(lang=>{
+    const p = bundle[lang]; if(!p || !p.levels) return;
+    p.unlockedLevel = Math.max(1, nNum(p.unlockedLevel, 1));
+    for(let l=1; l<=NUM_LEVELS; l++){
+      const lvl = p.levels[l]; if(!lvl) continue;
+      lvl.unlockedVariant = nNum(lvl.unlockedVariant, l===1?1:0);
+      if(l <= p.unlockedLevel && lvl.unlockedVariant < 1) lvl.unlockedVariant = 1;
+      if(lvl.variants){
+        for(let v=1; v<=NUM_VARIANTS; v++){
+          if(!lvl.variants[v]) lvl.variants[v] = {done:false, score:0};
+          lvl.variants[v].score = nNum(lvl.variants[v].score, 0);
+        }
+      }
+    }
+  });
+  return bundle;
+}
 function tierForLevel(lv){ return lv<=30 ? 'a' : (lv<=70 ? 'b' : 'c'); }
 
 function seedFromStr(s){ let h=1779033703^s.length; for(let i=0;i<s.length;i++){ h=Math.imul(h^s.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return h>>>0; }
@@ -2853,7 +2907,7 @@ let S = {
   learnLang:null, declaredLevel:null, referral:null,
   dark:true, uiLang:'tj',
   user:null,
-  progress: freshProgress(),
+  progress: normalizeProgress(freshProgress()),
   stats: freshStats(),
   avatarHue: 260,
   avatarPhoto:null,
@@ -3319,10 +3373,10 @@ function renderWelcome(){
 /* ---------- HOME (new landing screen) + COURSE (the old level grid, moved off the home slot) ---------- */
 function langLabel(){ return S.learnLang==='ru' ? t('russian') : t('english'); }
 function renderCourse(){
-  const prog = S.progress[S.learnLang];
+  const prog = normalizeProgress(S.progress)[S.learnLang];
   let levelsHtml='';
   for(let l=1; l<=NUM_LEVELS; l++){
-    const unlocked = l<=prog.unlockedLevel;
+    const unlocked = l<=nNum(prog.unlockedLevel,1);
     const allDone = Object.values(prog.levels[l].variants).every(v=>v.done);
     levelsHtml += `<button class="level-card glass ${unlocked?'':'locked'} ${allDone?'done':''}" ${unlocked?`onclick="App.openLevel(${l})"`:''}>
       <div class="lvl-num">${l}</div><div class="lvl-lbl">${t('levelsTitle')} ${l}</div>
@@ -3389,11 +3443,11 @@ function topbar(){
 }
 function renderVariants(){
   const l = S.selectedLevel;
-  const prog = S.progress[S.learnLang];
+  const prog = normalizeProgress(S.progress)[S.learnLang];
   const lvl = prog.levels[l];
   let rows='';
   for(let v=1; v<=NUM_VARIANTS; v++){
-    const unlocked = v<=lvl.unlockedVariant;
+    const unlocked = v<=nNum(lvl.unlockedVariant,0);
     const d = lvl.variants[v];
     rows += `<button class="variant-row glass ${unlocked?'':'locked'} ${d.done?'done':''}" ${unlocked?`onclick="App.startQuiz(${l},${v})"`:''}>
       <div class="vnum">${d.done?'✓':v}</div>
@@ -3451,7 +3505,7 @@ function renderResults(){
   const r = S.quiz;
   const pct = Math.round((r.correct/r.questions.length)*100);
   const isLeveled = r.level!=null;
-  const passed = isLeveled ? r.correct >= PASS_THRESHOLD : pct>=60;
+  const passed = isLeveled ? quizPassed(r) : pct>=60;
   const circumference = 2*Math.PI*62;
   const dash = circumference*(pct/100);
   const testBand = r.mode==='test' ? bandFromScore(r.correct, r.questions.length) : null;
@@ -3678,7 +3732,7 @@ function renderLibrary(){
     </button>`).join('');
   return `<div class="app-shell">
     ${topbar()}
-    ${special ? `<button class="back-link" onclick="S.libSpecial=null; App.go('mywords')">← ${t('myWords')}</button>` : ''}
+    ${special ? `<button class="back-link" onclick="S.libSpecial=null; App.go('mywords')">← ${t('myWords')}</button>` : `<button class="back-link" onclick="App.go('dashboard')">← ${t('dashboard')}</button>`}
     <h1 class="disp" style="font-size:22px; margin-bottom:4px;">${special==='fav'?t('favorites'):special==='learned'?t('learnedWords'):t('library')}</h1>
     <div class="onb-sub" style="margin-bottom:14px; text-align:left;">${langLabel()} · ${allLibraryWords().length.toLocaleString()} ${t('wordsCount')}</div>
     ${special ? '' : `<div class="lib-search-row">
@@ -4043,22 +4097,19 @@ function renderAdmin(){
   </div>`;
 }
 
-/* ---------- BOTTOM NAV (Асосӣ / Калимаҳои ман / Луғат / Баттл / Рейтинг) ----------
-   Profile and Settings moved to quick-access icons in topbar() instead — the reference
-   design reaches them from the top card, not the bottom bar. */
+/* ---------- BOTTOM NAV (Асосӣ / Калимаҳои ман / Баттл / Рейтинг)
+   Луғат opens from Home's primary button, not from this bar. */
 const NAV_ITEMS=[
   {id:'dashboard', ic:'🏠', key:'dashboard'},
   {id:'mywords', ic:'📗', key:'myWords'},
-  {id:'library', ic:'📚', key:'library'},
   {id:'battle', ic:'⚔️', key:'battle'},
   {id:'rating', ic:'🏆', key:'rating'}
 ];
 function renderNav(){
   const active = S.screen==='dashboard' ? 'dashboard'
     : (S.screen==='mywords' ? 'mywords'
-    : (['library','catset'].includes(S.screen) ? 'library'
-    : (['course','variants'].includes(S.screen) ? 'dashboard'
-    : (S.screen==='userprofile' ? (S._profileBack||'rating') : S.screen))));
+    : (['library','catset','course','variants'].includes(S.screen) ? 'dashboard'
+    : (S.screen==='userprofile' ? (S._profileBack||'rating') : S.screen)));
   const items = isAdmin() ? [...NAV_ITEMS, {id:'admin', ic:'🛡️', key:'adminTitle'}] : NAV_ITEMS;
   const battleBadge = (S.inboxCount||0)>0 ? `<span class="nav-badge">${S.inboxCount>9?'9+':S.inboxCount}</span>` : '';
   return `<div class="bottom-nav-wrap"><div class="bottom-nav" id="bottomNav">
@@ -4176,7 +4227,7 @@ const App = {
     if(!acc){ S.busy=false; S.authErr=t('errNoAccount'); render(); return; }
     S.user = { id:acc.id, name:acc.name, surname:acc.surname, email:acc.email, registeredAt: acc.registeredAt };
     S.learnLang=acc.learnLang; S.declaredLevel=acc.declaredLevel; S.referral=acc.referral;
-    S.progress = acc.progress || freshProgress(); S.stats = Object.assign(freshStats(), acc.stats||{});
+    S.progress = normalizeProgress(acc.progress || freshProgress()); S.stats = Object.assign(freshStats(), acc.stats||{});
     S.avatarHue = acc.avatarHue ?? 260; S.avatarPhoto = acc.avatarPhoto || null;
     S.uiLang = acc.uiLang || S.uiLang; S.dark = (acc.dark!==undefined && acc.dark!==null)? acc.dark : S.dark;
     S.busy=false; S.authErr='';
@@ -4206,10 +4257,14 @@ const App = {
     }
     go('dashboard');
   },
-  openLevel(l){ S.selectedLevel=l; go('variants'); },
+  openLevel(l){
+    const prog = normalizeProgress(S.progress)[S.learnLang];
+    if(nNum(l,0) > nNum(prog.unlockedLevel,1)){ toast(t('variantLockedMsg')); return; }
+    S.selectedLevel=l; go('variants');
+  },
   startQuiz(level, variant){
     const lvl = S.progress[S.learnLang].levels[level];
-    if(variant > lvl.unlockedVariant){ toast(t('variantLockedMsg')); return; }
+    if(nNum(variant,0) > nNum(lvl.unlockedVariant,0)){ toast(t('variantLockedMsg')); return; }
     const questions = buildQuiz(S.learnLang, level, variant);
     if(!questions.length){ toast(t('needMoreWords')); return; }
     S.quiz = { level, variant, questions, idx:0, correct:0, wrong:0, locked:false };
@@ -4238,14 +4293,24 @@ const App = {
   finishQuiz(){
     const q=S.quiz;
     if(q.level!=null){
-      const lvl = S.progress[S.learnLang].levels[q.level];
-      lvl.variants[q.variant].done = q.correct>=PASS_THRESHOLD ? true : lvl.variants[q.variant].done;
-      lvl.variants[q.variant].score = Math.max(lvl.variants[q.variant].score||0, q.correct);
-      if(q.correct>=PASS_THRESHOLD){
-        if(q.variant < NUM_VARIANTS && lvl.unlockedVariant===q.variant){ lvl.unlockedVariant=q.variant+1; toast(t('nextVariant')); }
-        const allDone = Object.values(lvl.variants).every(v=>v.done);
-        const prog = S.progress[S.learnLang];
-        if(allDone && q.level===prog.unlockedLevel && prog.unlockedLevel<NUM_LEVELS){ prog.unlockedLevel++; toast(t('nextLevel')); }
+      const passed = quizPassed(q);
+      const prog = normalizeProgress(S.progress)[S.learnLang];
+      const level = nNum(q.level, 1);
+      const variant = nNum(q.variant, 1);
+      const lvl = prog.levels[level];
+      lvl.variants[variant].score = Math.max(nNum(lvl.variants[variant].score,0), q.correct||0);
+      if(passed){
+        lvl.variants[variant].done = true;
+        if(variant < NUM_VARIANTS && nNum(lvl.unlockedVariant,0) < variant+1){
+          lvl.unlockedVariant = variant+1;
+          toast(t('nextVariant'));
+        }
+        if(level === nNum(prog.unlockedLevel,1) && prog.unlockedLevel < NUM_LEVELS){
+          prog.unlockedLevel = level+1;
+          const next = prog.levels[prog.unlockedLevel];
+          if(next && nNum(next.unlockedVariant,0) < 1) next.unlockedVariant = 1;
+          toast(t('nextLevel'));
+        }
       }
     }
     if(q.mode==='battle-create' && q.battleId){
@@ -4269,7 +4334,7 @@ const App = {
     if(q.mode==='battle-create' || q.mode==='battle-accept'){ App.openBattle(); return; }
     if(q.mode==='quick'){ go('dashboard'); return; }
     if(q.mode==='test'){ go('course'); return; }
-    if(q.correct>=PASS_THRESHOLD) go('variants'); else App.startQuiz(q.level, q.variant);
+    if(quizPassed(q)) go('variants'); else App.startQuiz(q.level, q.variant);
   },
   navTo(id){ if(id==='admin'){ App.openAdmin(); } else if(id==='rating'){ App.openRating(); } else if(id==='battle'){ App.openBattle(); } else { go(id); } },
   async openRating(){
@@ -4769,7 +4834,7 @@ async function boot(){
       if(acc){
         S.user = { id:acc.id, name:acc.name, surname:acc.surname, email:acc.email, registeredAt: acc.registeredAt };
         S.learnLang=acc.learnLang; S.declaredLevel=acc.declaredLevel; S.referral=acc.referral;
-        S.progress = acc.progress || freshProgress(); S.stats = Object.assign(freshStats(), acc.stats||{});
+        S.progress = normalizeProgress(acc.progress || freshProgress()); S.stats = Object.assign(freshStats(), acc.stats||{});
         S.avatarHue = acc.avatarHue ?? 260; S.avatarPhoto = acc.avatarPhoto || null;
         S.uiLang = acc.uiLang || S.uiLang; S.dark = (acc.dark!==undefined && acc.dark!==null)? acc.dark : S.dark;
         S.screen = acc.learnLang ? 'dashboard' : 'onb-lang';
