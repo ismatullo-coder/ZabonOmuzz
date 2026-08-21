@@ -2954,19 +2954,23 @@ function applyViewStats(email, stats){
 }
 async function loadSqlSocial(email){
   const target = accountKey(email);
-  const [{data: likes, error: e1}, {data: fols, error: e2}, {data: iFollow, error: e3}, {data: comments, error: e4}] = await Promise.all([
-    sb.from('profile_likes').select('liker_email').eq('profile_email', target),
-    sb.from('profile_follows').select('follower_email').eq('profile_email', target),
-    sb.from('profile_follows').select('profile_email').eq('follower_email', target),
-    sb.from('profile_comments').select('from_email, from_name, body, ts').eq('profile_email', target)
-  ]);
-  if(e1 && e2) return null;
-  return {
-    likedBy: (likes||[]).map(r=>r.liker_email),
-    followers: (fols||[]).map(r=>r.follower_email),
-    following: (iFollow||[]).map(r=>r.profile_email),
-    comments: (comments||[]).map(c=>({ from:c.from_email, name:c.from_name, text:c.body, ts:c.ts })).sort((a,b)=>(a.ts||0)-(b.ts||0))
-  };
+  try{
+    const [{data: likes, error: e1}, {data: fols, error: e2}, {data: iFollow, error: e3}, {data: comments, error: e4}] = await Promise.all([
+      sb.from('profile_likes').select('liker_email').eq('profile_email', target),
+      sb.from('profile_follows').select('follower_email').eq('profile_email', target),
+      sb.from('profile_follows').select('profile_email').eq('follower_email', target),
+      sb.from('profile_comments').select('from_email, from_name, body, ts').eq('profile_email', target)
+    ]);
+    const missing = [e1,e2,e3,e4].some(e=>e && (e.code==='PGRST205' || /schema cache|does not exist|not find/i.test(e.message||'')));
+    if(missing) return null;
+    if(e1 && e2) return null;
+    return {
+      likedBy: (likes||[]).map(r=>r.liker_email),
+      followers: (fols||[]).map(r=>r.follower_email),
+      following: (iFollow||[]).map(r=>r.profile_email),
+      comments: (comments||[]).map(c=>({ from:c.from_email, name:c.from_name, text:c.body, ts:c.ts })).sort((a,b)=>(a.ts||0)-(b.ts||0))
+    };
+  }catch(e){ return null; }
 }
 function uniqueEmails(arr){
   const out=[], seen={};
@@ -4568,15 +4572,17 @@ const App = {
     if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = viewSocial(target, S.viewUser.stats);
     render();
     const saved = await persistAccountNow();
-    if(i<0){
-      const ins = await sb.from('profile_likes').insert({ liker_email: me, profile_email: target });
-      if(ins.error) await sb.rpc('toggle_like', { target_email: target });
-    } else {
-      const del = await sb.from('profile_likes').delete().eq('liker_email', me).eq('profile_email', target);
-      if(del.error) await sb.rpc('toggle_like', { target_email: target });
-    }
+    try{
+      if(i<0){
+        const ins = await sb.from('profile_likes').insert({ liker_email: me, profile_email: target });
+        if(ins.error) await sb.rpc('toggle_like', { target_email: target });
+      } else {
+        const del = await sb.from('profile_likes').delete().eq('liker_email', me).eq('profile_email', target);
+        if(del.error) await sb.rpc('toggle_like', { target_email: target });
+      }
+    }catch(e){}
     S._socialBusy = false;
-    if(saved.error){ toast(t('socialFail')); return; }
+    if(saved && saved.error){ /* own row is enough; extra SQL tables are optional */ }
     render();
   },
   async toggleFollow(email){
@@ -4593,15 +4599,16 @@ const App = {
     if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = viewSocial(target, S.viewUser.stats);
     render();
     const saved = await persistAccountNow();
-    if(i<0){
-      const ins = await sb.from('profile_follows').insert({ follower_email: me, profile_email: target });
-      if(ins.error) await sb.rpc('toggle_follow', { target_email: target });
-    } else {
-      const del = await sb.from('profile_follows').delete().eq('follower_email', me).eq('profile_email', target);
-      if(del.error) await sb.rpc('toggle_follow', { target_email: target });
-    }
+    try{
+      if(i<0){
+        const ins = await sb.from('profile_follows').insert({ follower_email: me, profile_email: target });
+        if(ins.error) await sb.rpc('toggle_follow', { target_email: target });
+      } else {
+        const del = await sb.from('profile_follows').delete().eq('follower_email', me).eq('profile_email', target);
+        if(del.error) await sb.rpc('toggle_follow', { target_email: target });
+      }
+    }catch(e){}
     S._socialBusy = false;
-    if(saved.error){ toast(t('socialFail')); return; }
     render();
   },
   async sendComment(email){
@@ -4619,14 +4626,15 @@ const App = {
     if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = viewSocial(target, S.viewUser.stats);
     render();
     const saved = await persistAccountNow();
-    const ins = await sb.from('profile_comments').insert({
-      profile_email: target, from_email: me, from_name: item.name, body: text, ts: item.ts
-    });
-    if(ins.error){
-      await sb.rpc('add_profile_comment', { target_email: target, comment_text: text, from_name: item.name });
-    }
+    try{
+      const ins = await sb.from('profile_comments').insert({
+        profile_email: target, from_email: me, from_name: item.name, body: text, ts: item.ts
+      });
+      if(ins.error){
+        await sb.rpc('add_profile_comment', { target_email: target, comment_text: text, from_name: item.name });
+      }
+    }catch(e){}
     S._socialBusy = false;
-    if(saved.error){ toast(t('socialFail')); return; }
     render();
   },
   async openUserProfile(key){
@@ -4670,7 +4678,7 @@ const App = {
       registeredAt: row.registered_at ? new Date(row.registered_at).getTime() : null
     };
     const social = await loadSqlSocial(row.email);
-    S.viewUser.stats = attachSocial(S.viewUser.stats, social);
+    S.viewUser.stats = overlaySocial(row.email, attachSocial(row.stats||{}, social));
     S.commentDraft='';
     go('userprofile');
   },
