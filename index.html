@@ -198,7 +198,7 @@ html.light .backdrop::before{
 .variant-row .vtitle{ font-weight:700; font-size:14.5px; }
 .variant-row .vsub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
 .variant-row.locked{ opacity:.4; cursor:not-allowed; }
-.pill-btn{ padding:9px 16px; border-radius:100px; font-size:12.5px; font-weight:700; background:var(--surface-2); border:1px solid var(--border); }
+.pill-btn{ padding:9px 16px; border-radius:100px; font-size:12.5px; font-weight:700; background:var(--surface-2); border:1px solid var(--border); color:inherit; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
 .back-link{ display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--text-dim); margin-bottom:18px; font-weight:600; }
 .back-link:hover{ color:var(--text); }
 
@@ -435,7 +435,9 @@ html.light .bottom-nav{ background:rgba(255,255,255,.82); border-color:rgba(20,2
 .comment-item .cts{ font-size:11px; color:var(--text-faint); margin-top:4px; }
 .rating-row{ cursor:pointer; transition:transform .2s ease, border-color .2s ease; }
 .rating-row:hover{ transform:translateX(3px); border-color:var(--violet); }
-.inbox-banner{ width:100%; text-align:left; padding:14px 16px; border-radius:16px; margin-bottom:14px; display:flex; align-items:center; gap:10px; font-weight:700; }
+.share-box{ padding:14px 16px; border-radius:16px; margin-top:12px; text-align:left; }
+.share-box input{ width:100%; margin:8px 0 10px; padding:11px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12.5px; }
+.share-acts{ display:flex; gap:8px; flex-wrap:wrap; }
 </style>
 <base target="_blank">
 </head>
@@ -526,8 +528,9 @@ const I18N = {
     shareProfile:'Мубодилаи профил', daysUsing:'Рӯзи истифода', rankPlace:'Ҷой дар рейтинг',
     people:'Одамон', viewProfile:'Дидани профил', noComments:'Ҳанӯз шарҳ нест',
     speakWord:'Садо', pronunciation:'Тарзи хондан', translation:'Тарҷума',
-    contactUs:'Алоқа бо админ', phoneCall:'Занг', copiedLink:'Пайванд нусха шуд',
-    profileShared:'Профил фиристода шуд', moreWords:'Бештар',
+    contactUs:'Алоқа бо админ', phoneCall:'Занг',     copiedLink:'Пайванд нусха шуд',
+    profileShared:'Профил фиристода шуд', moreWords:'Бештар', shareLink:'Силкаи профил',
+    shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
     catAnimals:'Ҳайвонот', catBody:'Бадан', catTransport:'Нақлиёт', catSports:'Варзиш',
     catWeather:'Обу ҳаво', catNumbers:'Рақамҳо', catTravel:'Сафар', catMusic:'Мусиқӣ',
     catCity:'Шаҳр', catKitchen:'Ошхона', catJobs:'Касбҳо', catTech:'Технология',
@@ -606,8 +609,9 @@ const I18N = {
     shareProfile:'Поделиться профилем', daysUsing:'Дней в приложении', rankPlace:'Место в рейтинге',
     people:'Люди', viewProfile:'Открыть профиль', noComments:'Пока нет комментариев',
     speakWord:'Звук', pronunciation:'Произношение', translation:'Перевод',
-    contactUs:'Связь с админом', phoneCall:'Звонок', copiedLink:'Ссылка скопирована',
-    profileShared:'Профиль отправлен', moreWords:'Ещё',
+    contactUs:'Связь с админом', phoneCall:'Звонок',     copiedLink:'Ссылка скопирована',
+    profileShared:'Профиль отправлен', moreWords:'Ещё', shareLink:'Ссылка профиля',
+    shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
     catAnimals:'Животные', catBody:'Тело', catTransport:'Транспорт', catSports:'Спорт',
     catWeather:'Погода', catNumbers:'Числа', catTravel:'Путешествия', catMusic:'Музыка',
     catCity:'Город', catKitchen:'Кухня', catJobs:'Профессии', catTech:'Технологии',
@@ -686,8 +690,9 @@ const I18N = {
     shareProfile:'Share profile', daysUsing:'Days using the app', rankPlace:'Leaderboard place',
     people:'People', viewProfile:'View profile', noComments:'No comments yet',
     speakWord:'Sound', pronunciation:'Pronunciation', translation:'Translation',
-    contactUs:'Contact admin', phoneCall:'Call', copiedLink:'Link copied',
-    profileShared:'Profile shared', moreWords:'More',
+    contactUs:'Contact admin', phoneCall:'Call',     copiedLink:'Link copied',
+    profileShared:'Profile shared', moreWords:'More', shareLink:'Profile link',
+    shareWhatsapp:'WhatsApp', shareTelegram:'Telegram',
     catAnimals:'Animals', catBody:'Body', catTransport:'Transport', catSports:'Sports',
     catWeather:'Weather', catNumbers:'Numbers', catTravel:'Travel', catMusic:'Music',
     catCity:'City', catKitchen:'Kitchen', catJobs:'Jobs', catTech:'Technology',
@@ -3248,25 +3253,66 @@ const CAT_PHOTO_Q = {
   qualities:'abstract texture', verbs:'action running', emotions:'happy face portrait',
   society:'crowd city', relations:'friends handshake', ideas:'lightbulb idea', science:'science laboratory', other:'dictionary book'
 };
-function photoLock(s){ let h=2166136261; s=String(s||'x'); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0)%90000; }
-function photoQuery(en){
-  const parts = String(en||'').replace(/[^a-zA-Z ]+/g,' ').trim().split(/\s+/).filter(Boolean);
-  if(!parts.length) return 'object';
-  const stop = {a:1,an:1,the:1,to:1,of:1,and:1,or:1};
-  const good = parts.filter(w=>!stop[w.toLowerCase()]);
-  return (good[good.length-1]||parts[parts.length-1]).toLowerCase();
+function photoLock(s){ let h=2166136261; s=String(s||'x'); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0)%2147483646; }
+function photoMeaning(en, tj){
+  const raw = String(en||'').replace(/[\[\]\/]+/g,' ').replace(/\s+/g,' ').trim();
+  if(raw && !/^word\d+$/i.test(raw) && !/^to should /i.test(raw)) return raw;
+  return String(tj||'').trim() || 'object';
 }
-function wordPhotoUrl(en){
-  const q = photoQuery(en);
-  return 'https://loremflickr.com/400/320/'+encodeURIComponent(q)+'/all?lock='+photoLock(q);
+function wordPhotoUrl(en, tj){
+  const meaning = photoMeaning(en, tj);
+  const seed = photoLock(String(tj||'')+'|'+meaning);
+  const prompt = 'photorealistic photograph of '+meaning+', single subject, natural light, no text, no watermark, no collage, variation '+seed;
+  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(prompt)+'?width=400&height=320&nologo=true&seed='+seed;
+}
+function wordPhotoFallback(en, tj){
+  const meaning = photoMeaning(en, tj);
+  const lock = photoLock(String(tj||'')+'|'+meaning+'|fb');
+  const q = encodeURIComponent(meaning + ' photo');
+  return 'https://loremflickr.com/400/320/'+encodeURIComponent(meaning.replace(/\s+/g,','))+'/all?lock='+lock+'#q='+q;
 }
 function catPhotoUrl(cat){
   const q = CAT_PHOTO_Q[cat]||cat;
-  return 'https://loremflickr.com/240/180/'+encodeURIComponent(q)+'/all?lock='+photoLock(q);
+  const seed = photoLock('cat|'+cat+'|'+q);
+  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent('photorealistic photo of '+q+', no text')+'?width=240&height=180&nologo=true&seed='+seed;
 }
-function livePhotoHtml(src, alt){
+function livePhotoHtml(src, alt, fbSrc){
   const letter = esc(String(alt||'?').trim().charAt(0).toUpperCase()||'?');
-  return `<img class="live-photo" src="${src}" alt="${esc(alt||'')}" loading="lazy" onerror="this.onerror=null;this.style.display='none';var n=this.nextElementSibling;if(n)n.style.display='flex';"><span class="live-photo-fb">${letter}</span>`;
+  const fb = fbSrc ? esc(fbSrc) : '';
+  return `<img class="live-photo" src="${esc(src)}" alt="${esc(alt||'')}" loading="lazy" referrerpolicy="no-referrer" data-fb="${fb}" onerror="var i=this;if(i.dataset.fb){var u=i.dataset.fb;i.dataset.fb='';i.src=u;}else{i.onerror=null;i.style.display='none';var n=i.nextElementSibling;if(n)n.style.display='flex';}"><span class="live-photo-fb">${letter}</span>`;
+}
+function catPhotoFallback(cat){
+  const q = CAT_PHOTO_Q[cat]||cat;
+  return 'https://loremflickr.com/240/180/'+encodeURIComponent(String(q).replace(/\s+/g,','))+'/all?lock='+photoLock('catfb|'+cat);
+}
+function profileShareUrl(id, email){
+  const key = id || email || '';
+  return window.location.origin + (window.location.pathname||'/') + '?p=' + encodeURIComponent(key);
+}
+function readSharedProfileKey(){
+  try{
+    const q = new URLSearchParams(window.location.search||'');
+    const fromQ = q.get('p') || q.get('u');
+    if(fromQ) return fromQ;
+    const h = String(window.location.hash||'');
+    const m = h.match(/[?&#]?(?:p|u)=([^&]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }catch(e){ return ''; }
+}
+function shareBoxHtml(id, email, name){
+  const url = profileShareUrl(id, email);
+  const label = (name||'').trim() || 'ZabonOmuz';
+  const wa = 'https://wa.me/?text=' + encodeURIComponent(label + '\n' + url);
+  const tg = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(label);
+  return `<div class="share-box glass">
+    <div class="rl">${t('shareLink')}</div>
+    <input readonly value="${esc(url)}" onclick="this.select()">
+    <div class="share-acts">
+      <button class="pill-btn" type="button" onclick="App.shareProfile(${JSON.stringify(email)}, ${JSON.stringify(label)}, ${JSON.stringify(id||'')})">📤 ${t('shareProfile')}</button>
+      <a class="pill-btn" href="${esc(wa)}" target="_blank" rel="noopener">${t('shareWhatsapp')}</a>
+      <a class="pill-btn" href="${esc(tg)}" target="_blank" rel="noopener">${t('shareTelegram')}</a>
+    </div>
+  </div>`;
 }
 /* ---------- NEW: level band shown on the rating table (derived from progress, not the onboarding answer) ---------- */
 function levelBand(l){ if(l<=25) return 'beginner'; if(l<=50) return 'intermediate'; if(l<=75) return 'advanced'; return 'professional'; }
@@ -13516,7 +13562,7 @@ let S = {
   ratingLoading:false, ratingRaw:null, ratingErr:'',
   soundOn:true,
   showChangePass:false, settingsNewPass:'', settingsPassErr:'', settingsPassBusy:false,
-  viewUser:null, commentDraft:'', inbox:[], inboxCount:0
+  viewUser:null, commentDraft:'', inbox:[], inboxCount:0, pendingProfile:''
 };
 
 /* ---------- account persistence (real backend: Supabase) ----------
@@ -13747,7 +13793,7 @@ function render(){
     case 'admin': html=renderAdmin(); break;
     default: html='<div>—</div>';
   }
-  const showNav = ['dashboard','course','variants','profile','userprofile','settings','library','mywords','battle','admin','rating'].includes(S.screen);
+  const showNav = !!S.user && ['dashboard','course','variants','profile','userprofile','settings','library','mywords','battle','admin','rating'].includes(S.screen);
   app.innerHTML = `<div class="screen">${html}</div>` + (showNav ? renderNav() : '');
   if(showNav) requestAnimationFrame(positionBlob);
   /* NEW: repaint every emoji as the same colourful Twemoji glyph, so nothing falls back
@@ -13915,6 +13961,12 @@ function renderHome(){
   </div>`;
 }
 function topbar(){
+  if(!S.user){
+    return `<div class="topbar">
+      <div class="brand"><div class="mark">🪄</div>${t('appName')}</div>
+      <button class="pill-btn" type="button" onclick="App.go('auth')">${t('login')}</button>
+    </div>`;
+  }
   return `<div class="topbar">
     <div class="brand"><div class="mark">🪄</div>${t('appName')}</div>
     <div style="display:flex; align-items:center; gap:8px;">
@@ -14051,8 +14103,8 @@ function renderProfile(){
       <div class="onb-sub" style="margin-top:4px;">${esc(S.user.email)}</div>
       <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; justify-content:center;">
         <button class="pill-btn" onclick="App.pickPhoto()">📷 ${t('changePhoto')}</button>
-        <button class="pill-btn" onclick="App.shareProfile(${JSON.stringify(S.user.email)}, ${JSON.stringify((S.user.name+' '+S.user.surname).trim())})">📤 ${t('shareProfile')}</button>
       </div>
+      ${shareBoxHtml(S.user.id, S.user.email, (S.user.name+' '+S.user.surname).trim())}
     </div>
     <div class="social-row">
       <div class="stat-box glass"><div class="n">${soc.likes}</div><div class="l">${t('likes')}</div></div>
@@ -14083,16 +14135,18 @@ function renderUserProfile(){
   const hue = u.avatarHue||260;
   return `<div class="app-shell">
     ${topbar()}
-    <button class="back-link" onclick="App.go(S._profileBack||'rating')">← ${t(S._profileBack==='battle'?'battle':'rating')}</button>
+    <button class="back-link" onclick="App.go(S._profileBack||(S.user?'rating':'auth'))">← ${t(!S.user?'login':(S._profileBack==='battle'?'battle':'rating'))}</button>
     <div class="profile-head glass" style="padding:34px 20px;">
       <div class="avatar" style="${u.avatarPhoto?'':`background:linear-gradient(135deg, hsl(${hue} 80% 65%), hsl(${(hue+70)%360} 80% 55%));`}">${av}</div>
       <h2 class="disp" style="font-size:22px;">${esc(u.name||'')} ${esc(u.surname||'')}</h2>
       <div class="onb-sub" style="margin-top:4px;">${t('daysUsing')}: ${daysUsing(u.registeredAt)} · ${t('rankPlace')} #${rankOfEmail(u.email)}</div>
       <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
+        ${S.user ? `
         <button class="btn ${followed?'btn-ghost':'btn-primary'}" style="padding:10px 16px; width:auto;" onclick="App.toggleFollow(${JSON.stringify(u.email)})">${followed?'✓ '+t('unfollow'):'➕ '+t('follow')}</button>
         <button class="pill-btn" onclick="App.toggleLike(${JSON.stringify(u.email)})">${liked?'❤️':'🤍'} ${t(liked?'unlikeBtn':'likeBtn')} · ${soc.likes}</button>
-        <button class="pill-btn" onclick="App.shareProfile(${JSON.stringify(u.email)}, ${JSON.stringify(((u.name||'')+' '+(u.surname||'')).trim())})">📤 ${t('shareProfile')}</button>
+        ` : `<button class="btn btn-primary" style="padding:10px 16px; width:auto;" onclick="App.go('auth')">${t('login')}</button>`}
       </div>
+      ${shareBoxHtml(u.id, u.email, ((u.name||'')+' '+(u.surname||'')).trim())}
     </div>
     <div class="social-row">
       <div class="stat-box glass"><div class="n">${u.xp||0}</div><div class="l">${t('totalXp')}</div></div>
@@ -14100,10 +14154,10 @@ function renderUserProfile(){
       <div class="stat-box glass"><div class="n">${soc.likes}</div><div class="l">${t('likes')}</div></div>
     </div>
     <h2 class="disp" style="font-size:16px; margin:8px 0 10px;">${t('comments')}</h2>
-    <div class="comment-box">
+    ${S.user ? `<div class="comment-box">
       <input value="${esc(S.commentDraft)}" oninput="S.commentDraft=this.value" placeholder="${t('commentPh')}">
       <button class="btn btn-primary" style="padding:12px 16px; width:auto;" onclick="App.sendComment(${JSON.stringify(u.email)})">${t('sendComment')}</button>
-    </div>
+    </div>` : `<button class="pill-btn" style="margin-bottom:12px;" onclick="App.go('auth')">${t('login')}</button>`}
     ${comments.length===0? `<div class="lib-empty">${t('noComments')}</div>` : comments.map(c=>`
       <div class="comment-item glass">
         <div class="cnm">${esc(c.name||c.from||'')}</div>
@@ -14172,7 +14226,7 @@ function wordCardHtml(w){
   const speakTarget = S.learnLang==='ru' ? ru : en;
   const speakLang = S.learnLang==='ru' ? 'ru' : 'en';
   return `<div class="lib-card glass">
-    <div class="lib-card-pic">${livePhotoHtml(wordPhotoUrl(en), en)}</div>
+    <div class="lib-card-pic">${livePhotoHtml(wordPhotoUrl(en, w[0]), en, wordPhotoFallback(en, w[0]))}</div>
     <div class="lw">${esc(w[0])}</div>
     <div class="lph">${esc(ipa)} · ${t('pronunciation')}</div>
     <div class="lt">${esc(tr)}${en && ru && en!==ru ? ' · '+esc(S.learnLang==='ru'?en:ru) : ''}</div>
@@ -14203,7 +14257,7 @@ function renderLibrary(){
   const slice = list.slice(S.libPage*PAGE, S.libPage*PAGE+PAGE);
   const catTiles = CAT_ORDER.filter(c=>counts[c]).map(c=>`
     <button class="cat-tile glass" onclick="App.setLibCat('${c}')">
-      <span class="ci">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]))}</span>
+      <span class="ci">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]), catPhotoFallback(c))}</span>
       <span class="cn">${t(CAT_KEY[c])}</span>
       <span class="cc">${counts[c]} ${t('wordsCount')}</span>
     </button>`).join('');
@@ -14378,7 +14432,7 @@ function renderCategorySettings(){
         const on = sel.includes(c);
         return `
         <label class="cat-check-row glass ${(!on && full)?'dimmed':''}">
-          <span class="cc-ic">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]))}</span>
+          <span class="cc-ic">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]), catPhotoFallback(c))}</span>
           <span class="cc-lbl">${t(CAT_KEY[c])}</span>
           <input type="checkbox" ${on?'checked':''} onchange="App.toggleCat('${c}')">
           <span class="cc-box">${on?'✓':''}</span>
@@ -14428,7 +14482,7 @@ function renderAssemble(){
     </div>
     <div class="qcard glass type-fillblank" style="text-align:center;">
       <div class="qtype-badge">🧩 ${t('assembleTitle')}</div>
-      <div class="asm-photo">${livePhotoHtml(wordPhotoUrl(cur.en||cur.answer), cur.en||cur.answer)}</div>
+      <div class="asm-photo">${livePhotoHtml(wordPhotoUrl(cur.en||cur.answer, cur.tj), cur.en||cur.answer, wordPhotoFallback(cur.en||cur.answer, cur.tj))}</div>
       <div class="qmeta" style="margin-bottom:2px;">${t('questionOfN')} ${a.idx+1} / ${a.words.length}</div>
       <div class="onb-sub" style="margin:6px 0 20px;">${esc(cur.tj)}</div>
       <div class="assemble-slots">
@@ -14693,13 +14747,31 @@ const App = {
     S.uiLang = acc.uiLang || S.uiLang; S.dark = (acc.dark!==undefined && acc.dark!==null)? acc.dark : S.dark;
     S.busy=false; S.authErr='';
     toast(`${t('welcomeBack')}, ${acc.name}! / Welcome back, ${acc.name}!`);
+    const pending = S.pendingProfile;
+    if(pending && acc.learnLang){
+      S.pendingProfile = '';
+      go('dashboard');
+      App.warmSocial();
+      App.openUserProfile(pending);
+      return;
+    }
     go(acc.learnLang ? 'dashboard' : 'onb-lang');
     if(acc.learnLang) App.warmSocial();
   },
   chooseLang(l){ S.learnLang=l; persistAccount(); go('onb-level'); },
   chooseLevel(l){ S.declaredLevel=l; persistAccount(); go('onb-ref'); },
   chooseRef(r){ S.referral=r; persistAccount(); go('welcome'); },
-  finishOnboarding(){ persistAccount(); go('dashboard'); },
+  finishOnboarding(){
+    persistAccount();
+    const pending = S.pendingProfile;
+    if(pending){
+      S.pendingProfile = '';
+      go('dashboard');
+      App.openUserProfile(pending);
+      return;
+    }
+    go('dashboard');
+  },
   openLevel(l){ S.selectedLevel=l; go('variants'); },
   startQuiz(level, variant){
     const lvl = S.progress[S.learnLang].levels[level];
@@ -14984,15 +15056,34 @@ const App = {
     await sb.from('profiles').update({ stats }).eq('email', accountKey(email));
     return stats;
   },
-  async openUserProfile(email){
-    if(!email) return;
-    if(S.user && email===S.user.email){ go('profile'); return; }
-    S._profileBack = ['battle','rating','dashboard'].includes(S.screen) ? S.screen : 'rating';
+  async openUserProfile(key){
+    if(!key) return;
+    const needle = String(key).trim();
+    if(S.user && (needle===S.user.email || needle===S.user.id || needle===accountKey(S.user.email))){ go('profile'); return; }
+    S._profileBack = S.user && ['battle','rating','dashboard'].includes(S.screen) ? S.screen : (S.user ? 'rating' : 'auth');
     const rows = await fetchAllProfiles();
-    const row = rows.find(r=>r.email===email);
-    if(!row){ toast(t('libNoResults')); return; }
+    let row = rows.find(r=> r.id===needle || r.email===needle || r.email===accountKey(needle));
+    if(!row){
+      try{
+        const { data: byId } = await sb.from('profiles').select('*').eq('id', needle).limit(1);
+        row = (byId && byId[0]) || null;
+      }catch(e){}
+    }
+    if(!row){
+      try{
+        const { data: byEmail } = await sb.from('profiles').select('*').eq('email', accountKey(needle)).limit(1);
+        row = (byEmail && byEmail[0]) || null;
+      }catch(e){}
+    }
+    if(!row){
+      S.pendingProfile = needle;
+      if(!S.user){ go('auth'); return; }
+      toast(t('libNoResults'));
+      return;
+    }
     if(!S.ratingRaw || !S.ratingRaw.users || !S.ratingRaw.users.length){
-      S.ratingRaw = { users: rows.map(r=>({
+      const list = (rows && rows.length) ? rows : [row];
+      S.ratingRaw = { users: list.map(r=>({
         name:r.name||'', surname:r.surname||'', email:r.email, xp:(r.stats&&r.stats.xp)||0,
         weekXp:(r.stats&&r.stats.xp)||0, xpByActivity:(r.stats&&r.stats.xpByActivity)||{},
         avatarPhoto:r.avatar_photo||null,
@@ -15009,6 +15100,7 @@ const App = {
     go('userprofile');
   },
   async toggleLike(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
     const me = S.user.email;
     const stats = await App.patchProfileStats(email, (st)=>{
       st.likedBy = st.likedBy||[];
@@ -15019,6 +15111,7 @@ const App = {
     render();
   },
   async toggleFollow(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
     const me = S.user.email;
     const their = await App.patchProfileStats(email, (st)=>{
       st.followers = st.followers||[];
@@ -15036,6 +15129,7 @@ const App = {
     render();
   },
   async sendComment(email){
+    if(!S.user){ S.pendingProfile = email; go('auth'); return; }
     const text = (S.commentDraft||'').trim();
     if(!text) return;
     const stats = await App.patchProfileStats(email, (st)=>{
@@ -15047,10 +15141,12 @@ const App = {
     if(stats && S.viewUser && S.viewUser.email===email) S.viewUser.stats = stats;
     render();
   },
-  async shareProfile(email, name){
-    const url = window.location.origin + window.location.pathname + '?u=' + encodeURIComponent(email);
+  async shareProfile(email, name, id){
+    const url = profileShareUrl(id, email);
+    const title = name || 'ZabonOmuz';
+    const text = title + '\n' + url;
     try{
-      if(navigator.share){ await navigator.share({ title: name||'ZabonOmuz', text: name||'', url }); toast(t('profileShared')); return; }
+      if(navigator.share){ await navigator.share({ title, text, url }); toast(t('profileShared')); return; }
     }catch(e){ if(e && e.name==='AbortError') return; }
     try{ await navigator.clipboard.writeText(url); toast(t('copiedLink')); }
     catch(e){ toast(url); }
@@ -15167,7 +15263,7 @@ const App = {
       regName:'', regSurname:'', regEmail:'', regPassword:'', loginEmail:'', loginPassword:'',
       learnLang:null, declaredLevel:null, referral:null, progress:freshProgress(),
       stats:freshStats(), avatarHue:260, avatarPhoto:null, quiz:null, selectedLevel:null,
-      viewUser:null, inboxCount:0, battleData:null };
+      viewUser:null, inboxCount:0, battleData:null, pendingProfile: S.pendingProfile||'' };
     render();
   },
   async warmSocial(){
@@ -15213,9 +15309,10 @@ async function boot(){
       }
     }
   }catch(e){ /* no session / offline — fall back to the auth screen */ }
-  const shareU = new URLSearchParams(location.search).get('u');
+  const shareU = readSharedProfileKey();
+  if(shareU) S.pendingProfile = shareU;
   render();
-  if(shareU && S.user) App.openUserProfile(shareU);
+  if(shareU) App.openUserProfile(shareU);
 }
 boot();
 </script>
