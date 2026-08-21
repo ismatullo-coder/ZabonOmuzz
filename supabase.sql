@@ -81,6 +81,43 @@ alter table public.xp_log add column if not exists xp integer default 0;
 
 create index if not exists xp_log_email_ts_idx on public.xp_log (lower(email), ts);
 
+-- ---------- likes / follows / comments / inbox (real tables for the site) ----------
+create table if not exists public.profile_likes (
+  liker_email text not null,
+  profile_email text not null,
+  created_at timestamptz default now(),
+  primary key (liker_email, profile_email)
+);
+create index if not exists profile_likes_profile_idx on public.profile_likes (lower(profile_email));
+
+create table if not exists public.profile_follows (
+  follower_email text not null,
+  profile_email text not null,
+  created_at timestamptz default now(),
+  primary key (follower_email, profile_email)
+);
+create index if not exists profile_follows_profile_idx on public.profile_follows (lower(profile_email));
+create index if not exists profile_follows_follower_idx on public.profile_follows (lower(follower_email));
+
+create table if not exists public.profile_comments (
+  id uuid primary key default gen_random_uuid(),
+  profile_email text not null,
+  from_email text not null,
+  from_name text default '',
+  body text not null,
+  ts bigint not null default ((extract(epoch from now()) * 1000)::bigint)
+);
+create index if not exists profile_comments_profile_idx on public.profile_comments (lower(profile_email), ts);
+
+create table if not exists public.profile_inbox (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  from_email text not null,
+  item jsonb not null default '{}'::jsonb,
+  ts bigint not null default ((extract(epoch from now()) * 1000)::bigint)
+);
+create index if not exists profile_inbox_email_idx on public.profile_inbox (lower(email), ts desc);
+
 -- ---------- helper: current user's email ----------
 create or replace function public.my_email()
 returns text
@@ -96,7 +133,7 @@ as $$
   )));
 $$;
 
--- ---------- social: like / follow / comment / inbox (bypass RLS safely) ----------
+-- ---------- social RPCs (write to the tables above) ----------
 create or replace function public.toggle_like(target_email text)
 returns jsonb
 language plpgsql
@@ -106,35 +143,29 @@ as $$
 declare
   me text := public.my_email();
   target text := lower(trim(coalesce(target_email, '')));
-  st jsonb;
-  arr jsonb;
   has_me boolean;
+  arr jsonb;
 begin
   if me is null or me = '' then raise exception 'login required'; end if;
   if target = '' then raise exception 'no target'; end if;
 
-  select coalesce(stats, '{}'::jsonb) into st
-  from public.profiles where lower(email) = target;
-  if not found then raise exception 'profile not found'; end if;
-
-  arr := coalesce(st->'likedBy', '[]'::jsonb);
-  if jsonb_typeof(arr) <> 'array' then arr := '[]'::jsonb; end if;
-
   select exists(
-    select 1 from jsonb_array_elements_text(arr) v where lower(v) = me
+    select 1 from public.profile_likes
+    where lower(liker_email)=me and lower(profile_email)=target
   ) into has_me;
 
   if has_me then
-    select coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) into arr
-    from jsonb_array_elements_text(arr) v
-    where lower(v) <> me;
+    delete from public.profile_likes
+    where lower(liker_email)=me and lower(profile_email)=target;
   else
-    arr := arr || jsonb_build_array(me);
+    insert into public.profile_likes(liker_email, profile_email)
+    values (me, target)
+    on conflict (liker_email, profile_email) do nothing;
   end if;
 
-  st := jsonb_set(st, '{likedBy}', coalesce(arr, '[]'::jsonb), true);
-  update public.profiles set stats = st where lower(email) = target;
-  return st;
+  select coalesce(jsonb_agg(liker_email), '[]'::jsonb) into arr
+  from public.profile_likes where lower(profile_email)=target;
+  return jsonb_build_object('likedBy', arr);
 end;
 $$;
 
@@ -147,46 +178,36 @@ as $$
 declare
   me text := public.my_email();
   target text := lower(trim(coalesce(target_email, '')));
-  their jsonb;
-  mine jsonb;
-  arr jsonb;
   has_me boolean;
+  theirs jsonb;
+  mine jsonb;
 begin
   if me is null or me = '' then raise exception 'login required'; end if;
   if target = '' or target = me then raise exception 'bad target'; end if;
 
-  select coalesce(stats, '{}'::jsonb) into their
-  from public.profiles where lower(email) = target;
-  if not found then raise exception 'profile not found'; end if;
+  select exists(
+    select 1 from public.profile_follows
+    where lower(follower_email)=me and lower(profile_email)=target
+  ) into has_me;
 
-  select coalesce(stats, '{}'::jsonb) into mine
-  from public.profiles where lower(email) = me;
-  if not found then raise exception 'profile not found'; end if;
-
-  arr := coalesce(their->'followers', '[]'::jsonb);
-  if jsonb_typeof(arr) <> 'array' then arr := '[]'::jsonb; end if;
-  select exists(select 1 from jsonb_array_elements_text(arr) v where lower(v) = me) into has_me;
   if has_me then
-    select coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) into arr
-    from jsonb_array_elements_text(arr) v where lower(v) <> me;
+    delete from public.profile_follows
+    where lower(follower_email)=me and lower(profile_email)=target;
   else
-    arr := arr || jsonb_build_array(me);
+    insert into public.profile_follows(follower_email, profile_email)
+    values (me, target)
+    on conflict (follower_email, profile_email) do nothing;
   end if;
-  their := jsonb_set(their, '{followers}', coalesce(arr, '[]'::jsonb), true);
 
-  arr := coalesce(mine->'following', '[]'::jsonb);
-  if jsonb_typeof(arr) <> 'array' then arr := '[]'::jsonb; end if;
-  if has_me then
-    select coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) into arr
-    from jsonb_array_elements_text(arr) v where lower(v) <> target;
-  else
-    arr := arr || jsonb_build_array(target);
-  end if;
-  mine := jsonb_set(mine, '{following}', coalesce(arr, '[]'::jsonb), true);
+  select coalesce(jsonb_agg(follower_email), '[]'::jsonb) into theirs
+  from public.profile_follows where lower(profile_email)=target;
+  select coalesce(jsonb_agg(profile_email), '[]'::jsonb) into mine
+  from public.profile_follows where lower(follower_email)=me;
 
-  update public.profiles set stats = their where lower(email) = target;
-  update public.profiles set stats = mine where lower(email) = me;
-  return jsonb_build_object('their', their, 'mine', mine);
+  return jsonb_build_object(
+    'their', jsonb_build_object('followers', theirs),
+    'mine', jsonb_build_object('following', mine)
+  );
 end;
 $$;
 
@@ -200,32 +221,28 @@ declare
   me text := public.my_email();
   target text := lower(trim(coalesce(target_email, '')));
   body text := left(trim(coalesce(comment_text, '')), 400);
-  st jsonb;
   arr jsonb;
 begin
   if me is null or me = '' then raise exception 'login required'; end if;
   if target = '' then raise exception 'no target'; end if;
   if body = '' then raise exception 'empty comment'; end if;
 
-  select coalesce(stats, '{}'::jsonb) into st
-  from public.profiles where lower(email) = target;
-  if not found then raise exception 'profile not found'; end if;
+  insert into public.profile_comments(profile_email, from_email, from_name, body, ts)
+  values (target, me, left(coalesce(from_name,''), 80), body, (extract(epoch from now())*1000)::bigint);
 
-  arr := coalesce(st->'comments', '[]'::jsonb);
-  if jsonb_typeof(arr) <> 'array' then arr := '[]'::jsonb; end if;
-  arr := arr || jsonb_build_array(jsonb_build_object(
-    'from', me,
-    'name', left(coalesce(from_name, ''), 80),
-    'text', body,
-    'ts', (extract(epoch from now()) * 1000)::bigint
-  ));
-  while jsonb_array_length(arr) > 80 loop
-    arr := arr - 0;
-  end loop;
+  delete from public.profile_comments
+  where id in (
+    select id from public.profile_comments
+    where lower(profile_email)=target
+    order by ts desc
+    offset 80
+  );
 
-  st := jsonb_set(st, '{comments}', arr, true);
-  update public.profiles set stats = st where lower(email) = target;
-  return st;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'from', c.from_email, 'name', c.from_name, 'text', c.body, 'ts', c.ts
+  ) order by c.ts), '[]'::jsonb) into arr
+  from public.profile_comments c where lower(c.profile_email)=target;
+  return jsonb_build_object('comments', arr);
 end;
 $$;
 
@@ -238,26 +255,21 @@ as $$
 declare
   me text := public.my_email();
   target text := lower(trim(coalesce(target_email, '')));
-  st jsonb;
-  arr jsonb;
 begin
   if me is null or me = '' then raise exception 'login required'; end if;
   if target = '' then raise exception 'no target'; end if;
 
-  select coalesce(stats, '{}'::jsonb) into st
-  from public.profiles where lower(email) = target;
-  if not found then raise exception 'profile not found'; end if;
+  insert into public.profile_inbox(email, from_email, item, ts)
+  values (target, me, coalesce(item, '{}'::jsonb), (extract(epoch from now())*1000)::bigint);
 
-  arr := coalesce(st->'inbox', '[]'::jsonb);
-  if jsonb_typeof(arr) <> 'array' then arr := '[]'::jsonb; end if;
-  arr := jsonb_build_array(coalesce(item, '{}'::jsonb)) || arr;
-  while jsonb_array_length(arr) > 40 loop
-    arr := arr - (jsonb_array_length(arr) - 1);
-  end loop;
-
-  st := jsonb_set(st, '{inbox}', arr, true);
-  update public.profiles set stats = st where lower(email) = target;
-  return st;
+  delete from public.profile_inbox
+  where id in (
+    select id from public.profile_inbox
+    where lower(email)=target
+    order by ts desc
+    offset 40
+  );
+  return item;
 end;
 $$;
 
@@ -269,7 +281,7 @@ begin
     select schemaname, tablename, policyname
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('profiles', 'battles', 'xp_log')
+      and tablename in ('profiles', 'battles', 'xp_log', 'profile_likes', 'profile_follows', 'profile_comments', 'profile_inbox')
   loop
     execute format('drop policy if exists %I on %I.%I', pol.policyname, pol.schemaname, pol.tablename);
   end loop;
@@ -278,6 +290,10 @@ end $$;
 alter table public.profiles enable row level security;
 alter table public.battles enable row level security;
 alter table public.xp_log enable row level security;
+alter table public.profile_likes enable row level security;
+alter table public.profile_follows enable row level security;
+alter table public.profile_comments enable row level security;
+alter table public.profile_inbox enable row level security;
 
 -- Rating + shared profile links: anyone can READ profiles (no passwords here).
 create policy profiles_select_all on public.profiles
@@ -324,6 +340,40 @@ create policy xp_log_insert_own on public.xp_log
   for insert to authenticated
   with check (lower(email) = public.my_email());
 
+create policy profile_likes_select on public.profile_likes
+  for select to anon, authenticated using (true);
+create policy profile_likes_insert on public.profile_likes
+  for insert to authenticated
+  with check (lower(liker_email) = public.my_email());
+create policy profile_likes_delete on public.profile_likes
+  for delete to authenticated
+  using (lower(liker_email) = public.my_email());
+
+create policy profile_follows_select on public.profile_follows
+  for select to anon, authenticated using (true);
+create policy profile_follows_insert on public.profile_follows
+  for insert to authenticated
+  with check (lower(follower_email) = public.my_email() and lower(profile_email) <> public.my_email());
+create policy profile_follows_delete on public.profile_follows
+  for delete to authenticated
+  using (lower(follower_email) = public.my_email());
+
+create policy profile_comments_select on public.profile_comments
+  for select to anon, authenticated using (true);
+create policy profile_comments_insert on public.profile_comments
+  for insert to authenticated
+  with check (lower(from_email) = public.my_email());
+create policy profile_comments_delete on public.profile_comments
+  for delete to authenticated
+  using (lower(from_email) = public.my_email());
+
+create policy profile_inbox_select on public.profile_inbox
+  for select to authenticated
+  using (lower(email) = public.my_email());
+create policy profile_inbox_insert on public.profile_inbox
+  for insert to authenticated
+  with check (lower(from_email) = public.my_email());
+
 -- ---------- grants ----------
 grant usage on schema public to anon, authenticated;
 
@@ -334,6 +384,14 @@ grant select, insert, update on public.battles to authenticated;
 
 grant select on public.xp_log to anon, authenticated;
 grant insert on public.xp_log to authenticated;
+
+grant select on public.profile_likes to anon, authenticated;
+grant insert, delete on public.profile_likes to authenticated;
+grant select on public.profile_follows to anon, authenticated;
+grant insert, delete on public.profile_follows to authenticated;
+grant select on public.profile_comments to anon, authenticated;
+grant insert, delete on public.profile_comments to authenticated;
+grant select, insert on public.profile_inbox to authenticated;
 
 grant execute on function public.my_email() to anon, authenticated;
 grant execute on function public.toggle_like(text) to authenticated;

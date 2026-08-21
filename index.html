@@ -13541,7 +13541,8 @@ function freshProgress(){
    Wrapped in a function (not a shared literal) so every account gets its own arrays/objects. ---------- */
 function freshStats(){
   return { correct:0, wrong:0, xp:0, coins:0, streak:0, lastActive:null,
-    favorites:[], mistakes:{}, learned:[], wordReps:{}, xpByActivity:{}, selectedCats:[] };
+    favorites:[], mistakes:{}, learned:[], wordReps:{}, xpByActivity:{}, selectedCats:[],
+    liked:[], following:[], commentsPosted:[], likedBy:[], followers:[], comments:[] };
 }
 let S = {
   screen:'auth', authMode:'register', authErr:'', lampLit:false,
@@ -13591,9 +13592,72 @@ function socialHas(arr, email){ return (arr||[]).some(x=>emailsEq(x, email)); }
 function applyViewStats(email, stats){
   if(!stats || !S.viewUser) return;
   if(emailsEq(S.viewUser.email, email)){
-    S.viewUser.stats = stats;
+    S.viewUser.stats = Object.assign({}, S.viewUser.stats||{}, stats);
     if(stats.xp!=null) S.viewUser.xp = stats.xp;
   }
+}
+async function loadSqlSocial(email){
+  const target = accountKey(email);
+  const [{data: likes, error: e1}, {data: fols, error: e2}, {data: iFollow, error: e3}, {data: comments, error: e4}] = await Promise.all([
+    sb.from('profile_likes').select('liker_email').eq('profile_email', target),
+    sb.from('profile_follows').select('follower_email').eq('profile_email', target),
+    sb.from('profile_follows').select('profile_email').eq('follower_email', target),
+    sb.from('profile_comments').select('from_email, from_name, body, ts').eq('profile_email', target)
+  ]);
+  if(e1 && e2) return null;
+  return {
+    likedBy: (likes||[]).map(r=>r.liker_email),
+    followers: (fols||[]).map(r=>r.follower_email),
+    following: (iFollow||[]).map(r=>r.profile_email),
+    comments: (comments||[]).map(c=>({ from:c.from_email, name:c.from_name, text:c.body, ts:c.ts })).sort((a,b)=>(a.ts||0)-(b.ts||0))
+  };
+}
+function attachSocial(stats, social){
+  const st = Object.assign(freshStats(), stats||{});
+  if(social){
+    st.likedBy = social.likedBy||[];
+    st.followers = social.followers||[];
+    st.following = social.following||[];
+    st.comments = social.comments||[];
+  }
+  return st;
+}
+function directoryWithMe(){
+  const rows = (S.directoryRows||[]).slice();
+  if(!S.user) return rows;
+  const mine = { email:S.user.email, name:S.user.name, surname:S.user.surname, stats:S.stats };
+  const i = rows.findIndex(r=>emailsEq(r.email, S.user.email));
+  if(i>=0) rows[i] = Object.assign({}, rows[i], mine);
+  else rows.push(mine);
+  return rows;
+}
+function overlaySocial(email, baseStats){
+  const target = accountKey(email);
+  const st0 = baseStats || {};
+  const likedSet = new Set((st0.likedBy||[]).map(accountKey).filter(Boolean));
+  const followerSet = new Set((st0.followers||[]).map(accountKey).filter(Boolean));
+  const comments = (st0.comments||[]).slice();
+  const seen = new Set(comments.map(c=>(c.ts||'')+'|'+(accountKey(c.from)||'')+'|'+(c.text||'')));
+  directoryWithMe().forEach(r=>{
+    const st = r.stats||{};
+    const from = accountKey(r.email);
+    if(!from) return;
+    if(socialHas(st.liked, target)) likedSet.add(from);
+    if(socialHas(st.following, target)) followerSet.add(from);
+    (st.commentsPosted||[]).forEach(c=>{
+      if(!emailsEq(c.to, target)) return;
+      const key = (c.ts||'')+'|'+from+'|'+(c.text||'');
+      if(seen.has(key)) return;
+      seen.add(key);
+      comments.push({ from, name:c.name||((r.name||'')+' '+(r.surname||'')).trim(), text:c.text, ts:c.ts });
+    });
+  });
+  return Object.assign({}, st0, {
+    likedBy:[...likedSet],
+    followers:[...followerSet],
+    following: st0.following||[],
+    comments
+  });
 }
 
 function profileRowToAccount(row){
@@ -13629,17 +13693,19 @@ let persistTimer=null;
 function persistAccount(){
   if(!S.user) return;
   clearTimeout(persistTimer);
-  persistTimer=setTimeout(async ()=>{
-    const snap = snapshotAccount();
-    if(!snap || !snap.id) return;
-    try{
-      await sb.from('profiles').update({
-        name:snap.name, surname:snap.surname, learn_lang:snap.learn_lang, declared_level:snap.declared_level,
-        referral:snap.referral, progress:snap.progress, stats:snap.stats, avatar_hue:snap.avatar_hue,
-        avatar_photo:snap.avatar_photo, ui_lang:snap.ui_lang, dark:snap.dark
-      }).eq('id', snap.id);
-    }catch(e){ /* best effort — never break the UI on a save hiccup */ }
-  }, 250);
+  persistTimer=setTimeout(()=>{ persistAccountNow(); }, 250);
+}
+async function persistAccountNow(){
+  if(!S.user) return { error:{ message:'no user' } };
+  clearTimeout(persistTimer);
+  const snap = snapshotAccount();
+  if(!snap || !snap.id) return { error:{ message:'no user' } };
+  const { error } = await sb.from('profiles').update({
+    name:snap.name, surname:snap.surname, learn_lang:snap.learn_lang, declared_level:snap.declared_level,
+    referral:snap.referral, progress:snap.progress, stats:snap.stats, avatar_hue:snap.avatar_hue,
+    avatar_photo:snap.avatar_photo, ui_lang:snap.ui_lang, dark:snap.dark
+  }).eq('id', snap.id);
+  return { error };
 }
 
 /* ---------- admin: registered-user directory + XP activity log ----------
@@ -13651,7 +13717,8 @@ function isAdmin(){ return !!(S.user && ADMIN_EMAILS.includes(String(S.user.emai
 
 async function fetchAllProfiles(){
   const { data, error } = await sb.from('profiles').select('*');
-  if(error || !data) return [];
+  if(error || !data) return S.directoryRows||[];
+  S.directoryRows = data;
   return data;
 }
 async function fetchXpLog(email){
@@ -14679,7 +14746,8 @@ const App = {
     try{
       const acc = await loadAccountById(S.user.id);
       if(!acc) return;
-      S.stats = Object.assign(freshStats(), acc.stats||{});
+      const social = await loadSqlSocial(S.user.email);
+      S.stats = attachSocial(acc.stats||{}, social);
       if(acc.avatarPhoto!==undefined) S.avatarPhoto = acc.avatarPhoto || S.avatarPhoto;
       if(S.screen==='profile') render();
     }catch(e){}
@@ -15031,9 +15099,11 @@ const App = {
     }
     if(error){ toast(error.message||'Хатогӣ'); return; }
     try{
-      await sb.rpc('push_profile_inbox', {
-        target_email: accountKey(email),
-        item: { type:'battle_invite', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() }
+      await sb.from('profile_inbox').insert({
+        email: accountKey(email),
+        from_email: accountKey(S.user.email),
+        item: { type:'battle_invite', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() },
+        ts: Date.now()
       });
     }catch(e){}
     toast(t('battleSent'));
@@ -15056,9 +15126,11 @@ const App = {
     if(!b){ toast('Хатогӣ'); return; }
     await sb.from('battles').update({ status:'declined' }).eq('id', id);
     try{
-      await sb.rpc('push_profile_inbox', {
-        target_email: accountKey(b.challenger_email),
-        item: { type:'battle_declined', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() }
+      await sb.from('profile_inbox').insert({
+        email: accountKey(b.challenger_email),
+        from_email: accountKey(S.user.email),
+        item: { type:'battle_declined', from:S.user.email, fromName:(S.user.name+' '+S.user.surname).trim(), ts:Date.now() },
+        ts: Date.now()
       });
     }catch(e){}
     toast(t('battleDecline'));
@@ -15085,22 +15157,21 @@ const App = {
     const me = accountKey(S.user.email);
     const target = accountKey(email);
     S._socialBusy = true;
-    if(S.viewUser && emailsEq(S.viewUser.email, target)){
-      const st = Object.assign(freshStats(), S.viewUser.stats||{});
-      st.likedBy = (st.likedBy||[]).slice();
-      const i = st.likedBy.findIndex(x=>emailsEq(x, me));
-      if(i>=0) st.likedBy.splice(i,1); else st.likedBy.push(me);
-      S.viewUser.stats = st;
-      render();
+    const on = !!(S.viewUser && emailsEq(S.viewUser.email, target) && socialHas(S.viewUser.stats && S.viewUser.stats.likedBy, me));
+    let error;
+    if(on){
+      ({ error } = await sb.from('profile_likes').delete().eq('liker_email', me).eq('profile_email', target));
+    } else {
+      ({ error } = await sb.from('profile_likes').insert({ liker_email: me, profile_email: target }));
     }
-    const { data, error } = await sb.rpc('toggle_like', { target_email: target });
+    if(error){
+      const rpc = await sb.rpc('toggle_like', { target_email: target });
+      error = rpc.error;
+    }
+    const social = await loadSqlSocial(target);
     S._socialBusy = false;
-    if(error || !data){
-      toast(t('socialFail'));
-      if(S.viewUser && emailsEq(S.viewUser.email, target)) App.openUserProfile(S.viewUser.email || S.viewUser.id);
-      return;
-    }
-    applyViewStats(target, data);
+    if(error && !social){ toast(t('socialFail')); return; }
+    if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = attachSocial(S.viewUser.stats, social);
     render();
   },
   async toggleFollow(email){
@@ -15110,27 +15181,23 @@ const App = {
     const me = accountKey(S.user.email);
     const target = accountKey(email);
     S._socialBusy = true;
-    if(S.viewUser && emailsEq(S.viewUser.email, target)){
-      const st = Object.assign(freshStats(), S.viewUser.stats||{});
-      st.followers = (st.followers||[]).slice();
-      const i = st.followers.findIndex(x=>emailsEq(x, me));
-      if(i>=0) st.followers.splice(i,1); else st.followers.push(me);
-      S.viewUser.stats = st;
-      S.stats.following = S.stats.following||[];
-      const j = S.stats.following.findIndex(x=>emailsEq(x, target));
-      if(i>=0 && j>=0) S.stats.following.splice(j,1);
-      else if(i<0 && j<0) S.stats.following.push(target);
-      render();
+    const on = !!(S.viewUser && emailsEq(S.viewUser.email, target) && socialHas(S.viewUser.stats && S.viewUser.stats.followers, me));
+    let error;
+    if(on){
+      ({ error } = await sb.from('profile_follows').delete().eq('follower_email', me).eq('profile_email', target));
+    } else {
+      ({ error } = await sb.from('profile_follows').insert({ follower_email: me, profile_email: target }));
     }
-    const { data, error } = await sb.rpc('toggle_follow', { target_email: target });
+    if(error){
+      const rpc = await sb.rpc('toggle_follow', { target_email: target });
+      error = rpc.error;
+    }
+    const social = await loadSqlSocial(target);
+    const mine = await loadSqlSocial(me);
     S._socialBusy = false;
-    if(error || !data){
-      toast(t('socialFail'));
-      if(S.viewUser && emailsEq(S.viewUser.email, target)) App.openUserProfile(S.viewUser.email || S.viewUser.id);
-      return;
-    }
-    if(data.their) applyViewStats(target, data.their);
-    if(data.mine && data.mine.following) S.stats.following = data.mine.following;
+    if(error && !social){ toast(t('socialFail')); return; }
+    if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = attachSocial(S.viewUser.stats, social);
+    if(mine) S.stats = attachSocial(S.stats, mine);
     render();
   },
   async sendComment(email){
@@ -15140,15 +15207,25 @@ const App = {
     if(S._socialBusy) return;
     S._socialBusy = true;
     const target = accountKey(email);
-    const { data, error } = await sb.rpc('add_profile_comment', {
-      target_email: target,
-      comment_text: text,
-      from_name: (S.user.name+' '+S.user.surname).trim()
+    const me = accountKey(S.user.email);
+    let { error } = await sb.from('profile_comments').insert({
+      profile_email: target,
+      from_email: me,
+      from_name: (S.user.name+' '+S.user.surname).trim(),
+      body: text,
+      ts: Date.now()
     });
+    if(error){
+      const rpc = await sb.rpc('add_profile_comment', {
+        target_email: target, comment_text: text, from_name: (S.user.name+' '+S.user.surname).trim()
+      });
+      error = rpc.error;
+    }
+    const social = await loadSqlSocial(target);
     S._socialBusy = false;
-    if(error || !data){ toast(t('socialFail')); return; }
+    if(error && !social){ toast(t('socialFail')); return; }
     S.commentDraft='';
-    applyViewStats(target, data);
+    if(S.viewUser && emailsEq(S.viewUser.email, target)) S.viewUser.stats = attachSocial(S.viewUser.stats, social);
     render();
   },
   async openUserProfile(key){
@@ -15191,6 +15268,8 @@ const App = {
       avatarPhoto: row.avatar_photo||null, avatarHue: row.avatar_hue||260,
       registeredAt: row.registered_at ? new Date(row.registered_at).getTime() : null
     };
+    const social = await loadSqlSocial(row.email);
+    S.viewUser.stats = attachSocial(S.viewUser.stats, social);
     S.commentDraft='';
     go('userprofile');
   },
