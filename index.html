@@ -395,14 +395,19 @@ html.light .bottom-nav{ background:rgba(255,255,255,.82); border-color:rgba(20,2
 .lib-search-btn{ width:48px; height:48px; border-radius:14px; background:var(--grad-1); color:#0a0b0f; font-size:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
 .cat-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:12px; margin-bottom:18px; }
 .cat-tile{ padding:16px 12px; border-radius:18px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px; min-height:110px; justify-content:center; }
-.cat-tile .ci{ font-size:30px; line-height:1; height:34px; display:flex; align-items:center; }
-.cat-tile .ci img.emoji{ width:30px; height:30px; }
+.cat-tile .ci{ width:100%; aspect-ratio:1.35; border-radius:12px; overflow:hidden; background:var(--surface-2); }
 .cat-tile .cn{ font-weight:700; font-size:13px; line-height:1.25; }
 .cat-tile .cc{ font-size:11px; color:var(--text-dim); }
 .lib-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:12px; }
 .lib-card{ padding:14px 12px 12px; border-radius:18px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px; min-height:210px; }
-.lib-card-pic{ width:100%; aspect-ratio:1.2; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:46px; overflow:hidden; background:linear-gradient(160deg, rgba(139,124,249,.2), rgba(43,217,201,.12)); }
-.lib-card-pic img.emoji{ width:52px; height:52px; }
+.lib-card-pic{ width:100%; aspect-ratio:1.2; border-radius:14px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:linear-gradient(160deg, rgba(139,124,249,.2), rgba(43,217,201,.12)); }
+.live-photo{ width:100%; height:100%; object-fit:cover; display:block; }
+.live-photo-fb{ width:100%; height:100%; display:none; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:800; font-size:28px; color:var(--text-dim); }
+.cc-ic .live-photo, .cc-ic .live-photo-fb{ width:38px; height:38px; border-radius:11px; }
+.asm-photo{ width:min(100%,220px); height:140px; margin:0 auto 10px; border-radius:16px; overflow:hidden; background:var(--surface-2); }
+.cat-check-row.dimmed{ opacity:.45; }
+.cc-ic{ overflow:hidden; padding:0; }
+.cc-ic .live-photo{ width:38px; height:38px; }
 .lib-card .lw{ font-weight:800; font-size:15px; line-height:1.2; }
 .lib-card .lph{ font-size:11px; color:var(--violet); }
 .lib-card .lt{ font-size:12.5px; font-weight:600; color:var(--text-dim); line-height:1.3; }
@@ -414,7 +419,8 @@ html.light .bottom-nav{ background:rgba(255,255,255,.82); border-color:rgba(20,2
 .social-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
 .contact-list{ display:grid; gap:10px; margin-top:8px; }
 .contact-link{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; text-decoration:none; color:inherit; }
-.contact-ic{ width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:20px; background:var(--surface-2); flex-shrink:0; }
+.contact-ic{ width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:#fff; flex-shrink:0; overflow:hidden; }
+.contact-ic img{ width:28px; height:28px; object-fit:contain; display:block; }
 .contact-link .cl{ font-weight:700; font-size:14px; }
 .contact-link .cs{ font-size:12px; color:var(--text-dim); margin-top:2px; }
 .btn-danger{ background:rgba(255,110,110,.16); border:1px solid rgba(255,110,110,.35); color:#ff8b8b; }
@@ -499,7 +505,10 @@ const I18N = {
     courseTitle:'Курс', myWords:'Калимаҳои ман', battle:'Баттл',
     homeRepeat:'Такрори калимаҳо', homeMix:'Омезиши калимаҳо', homeCatSettings:'Танзими категорияҳо', homeAssemble:'Ҳарфчинӣ',
     streakDays:'Рӯзи фаъол', wordsLearnedLbl:'Омӯхташуда',
-    catSettingsTitle:'Категорияҳое, ки аз онҳо вожа аз ёд намудан мехоҳед, интихоб кунед', catSaveExit:'Сабт намудан ва баромадан', catSaved:'Категорияҳо сабт шуданд',
+    catSettingsTitle:'То 5 категория интихоб кунед — омӯзиш танҳо аз ҳаминҳо мешавад', catSaveExit:'Сабт намудан ва баромадан', catSaved:'Категорияҳо сабт шуданд',
+    catMaxFive:'Танҳо 5 категория. Аввал якеро хомӯш кунед, баъд нав интихоб кунед.',
+    catPicked:'Интихоб', catNeedPick:'Аввал то 5 категория интихоб кунед', catNeedOne:'Ҳадди ақал 1 категория интихоб кунед',
+    catHint:'Пешинаро хомӯш карда метавонед ва категорияи нав барои омӯхтан фаъол кунед.',
     favorites:'Дӯстдоштаҳо', mistakesLbl:'Хатогиҳо', learnedWords:'Калимаҳои омӯхташуда', newLesson:'Дарси нав', wordsCount:'калима',
     lvlBeginner:'Навомӯз', lvlIntermediate:'Миёна', lvlAdvanced:'Пешрафта', lvlProfessional:'Профессионал',
     weeklyRating:'Рейтинги ҳафтавӣ', assembleTitle:'Калимаро ҷамъ кун', assembleKnow:'Калимаро донистан',
@@ -576,7 +585,10 @@ const I18N = {
     courseTitle:'Курс', myWords:'Мои слова', battle:'Баттл',
     homeRepeat:'Повторить слова', homeMix:'Смешанные слова', homeCatSettings:'Настройка категорий', homeAssemble:'Собери слово',
     streakDays:'Активных дней', wordsLearnedLbl:'Выучено',
-    catSettingsTitle:'Выберите категории, из которых хотите запоминать слова', catSaveExit:'Сохранить и выйти', catSaved:'Категории сохранены',
+    catSettingsTitle:'Выберите до 5 категорий — учиться можно только по ним', catSaveExit:'Сохранить и выйти', catSaved:'Категории сохранены',
+    catMaxFive:'Можно только 5 категорий. Сначала выключите одну, затем выберите новую.',
+    catPicked:'Выбрано', catNeedPick:'Сначала выберите до 5 категорий', catNeedOne:'Выберите хотя бы 1 категорию',
+    catHint:'Можно выключить прежний выбор и начать учить новые категории.',
     favorites:'Избранные', mistakesLbl:'Ошибки', learnedWords:'Выученные слова', newLesson:'Новый урок', wordsCount:'слов',
     lvlBeginner:'Новичок', lvlIntermediate:'Средний', lvlAdvanced:'Продвинутый', lvlProfessional:'Профессионал',
     weeklyRating:'Недельный рейтинг', assembleTitle:'Собери слово', assembleKnow:'Узнать слово',
@@ -653,7 +665,10 @@ const I18N = {
     courseTitle:'Course', myWords:'My Words', battle:'Battle',
     homeRepeat:'Repeat words', homeMix:'Mixed words', homeCatSettings:'Category settings', homeAssemble:'Build the word',
     streakDays:'Active days', wordsLearnedLbl:'Learned',
-    catSettingsTitle:'Choose the categories you want to learn words from', catSaveExit:'Save and exit', catSaved:'Categories saved',
+    catSettingsTitle:'Pick up to 5 categories — you learn only from those', catSaveExit:'Save and exit', catSaved:'Categories saved',
+    catMaxFive:'Only 5 categories. Turn one off first, then pick a new one.',
+    catPicked:'Selected', catNeedPick:'First choose up to 5 categories', catNeedOne:'Select at least 1 category',
+    catHint:'You can turn off a previous choice and start a new category.',
     favorites:'Favorites', mistakesLbl:'Mistakes', learnedWords:'Learned words', newLesson:'New lesson', wordsCount:'words',
     lvlBeginner:'Beginner', lvlIntermediate:'Intermediate', lvlAdvanced:'Advanced', lvlProfessional:'Professional',
     weeklyRating:'Weekly rating', assembleTitle:'Build the word', assembleKnow:'Reveal word',
@@ -3220,6 +3235,39 @@ const CAT_ICON = { home:'\ud83c\udfe0', family:'\ud83d\udc6a', nature:'\ud83c\ud
   numbers:'\ud83d\udd22', travel:'\u2708\ufe0f', music:'\ud83c\udfb5', city:'\ud83c\udfd9\ufe0f', kitchen:'\ud83c\udf73',
   jobs:'\ud83d\udc77', tech:'\ud83d\udcbb', holidays:'\ud83c\udf89', furniture:'\ud83d\udecb\ufe0f', drinks:'\ud83c\udf75',
   fruits:'\ud83c\udf4f', vegetables:'\ud83e\udd66', tools:'\ud83d\udd27', places:'\ud83d\udccd', countries:'\ud83c\udf0d' };
+const MAX_LEARN_CATS = 5;
+const CAT_PHOTO_Q = {
+  home:'house interior', family:'family people', nature:'forest nature', food:'food meal',
+  fruits:'fresh fruit', vegetables:'vegetables', drinks:'drinks cup', kitchen:'kitchen cooking',
+  furniture:'furniture sofa', clothing:'clothes fashion', colors:'color palette', animals:'animals wildlife',
+  body:'human body', health:'doctor hospital', time:'clock time', weather:'weather sky',
+  numbers:'numbers', school:'classroom school', education:'university study', shopping:'shopping market',
+  work:'office work', jobs:'profession worker', transport:'car transport', travel:'travel suitcase',
+  city:'city skyline', places:'landmark place', countries:'world map', sports:'sports stadium',
+  music:'music concert', tech:'computer technology', holidays:'celebration party', tools:'tools workshop',
+  qualities:'abstract texture', verbs:'action running', emotions:'happy face portrait',
+  society:'crowd city', relations:'friends handshake', ideas:'lightbulb idea', science:'science laboratory', other:'dictionary book'
+};
+function photoLock(s){ let h=2166136261; s=String(s||'x'); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0)%90000; }
+function photoQuery(en){
+  const parts = String(en||'').replace(/[^a-zA-Z ]+/g,' ').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return 'object';
+  const stop = {a:1,an:1,the:1,to:1,of:1,and:1,or:1};
+  const good = parts.filter(w=>!stop[w.toLowerCase()]);
+  return (good[good.length-1]||parts[parts.length-1]).toLowerCase();
+}
+function wordPhotoUrl(en){
+  const q = photoQuery(en);
+  return 'https://loremflickr.com/400/320/'+encodeURIComponent(q)+'/all?lock='+photoLock(q);
+}
+function catPhotoUrl(cat){
+  const q = CAT_PHOTO_Q[cat]||cat;
+  return 'https://loremflickr.com/240/180/'+encodeURIComponent(q)+'/all?lock='+photoLock(q);
+}
+function livePhotoHtml(src, alt){
+  const letter = esc(String(alt||'?').trim().charAt(0).toUpperCase()||'?');
+  return `<img class="live-photo" src="${src}" alt="${esc(alt||'')}" loading="lazy" onerror="this.onerror=null;this.style.display='none';var n=this.nextElementSibling;if(n)n.style.display='flex';"><span class="live-photo-fb">${letter}</span>`;
+}
 /* ---------- NEW: level band shown on the rating table (derived from progress, not the onboarding answer) ---------- */
 function levelBand(l){ if(l<=25) return 'beginner'; if(l<=50) return 'intermediate'; if(l<=75) return 'advanced'; return 'professional'; }
 const LEVEL_BAND_KEY = { beginner:'lvlBeginner', intermediate:'lvlIntermediate', advanced:'lvlAdvanced', professional:'lvlProfessional' };
@@ -13659,11 +13707,10 @@ function touchStreak(){
 /* ---------- NEW: the word pool used by the Home-screen quick-practice modes, respecting the category filter.
    The main 100-level Course keeps using its own procedural engine untouched. ---------- */
 function poolBySelectedCats(){
-  const cats = S.stats.selectedCats||[];
+  const cats = (S.stats.selectedCats||[]).slice(0, MAX_LEARN_CATS);
   const all = allLibraryWords();
-  if(!cats.length) return all;
-  const filtered = all.filter(w=>cats.includes(wordCategory(w[0])));
-  return filtered.length>=4 ? filtered : all;
+  if(!cats.length) return [];
+  return all.filter(w=>cats.includes(wordCategory(w[0])));
 }
 function applyTheme(){ document.documentElement.classList.toggle('light', !S.dark); }
 function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -14101,16 +14148,16 @@ function renderSettings(){
     <h2 class="disp" style="font-size:16px; margin:22px 0 10px;">${t('contactUs')}</h2>
     <div class="contact-list">
       <a class="contact-link glass" href="https://wa.me/992171665599" rel="noopener">
-        <span class="contact-ic">💬</span><div><div class="cl">WhatsApp</div><div class="cs">+992 171 665 599</div></div>
+        <span class="contact-ic"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp"></span><div><div class="cl">WhatsApp</div><div class="cs">+992 171 665 599</div></div>
       </a>
       <a class="contact-link glass" href="tel:+992171665599" rel="noopener">
-        <span class="contact-ic">📞</span><div><div class="cl">${t('phoneCall')}</div><div class="cs">+992 171 665 599</div></div>
+        <span class="contact-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="#34c759"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.5 21 3 13.5 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8z"/></svg></span><div><div class="cl">${t('phoneCall')}</div><div class="cs">+992 171 665 599</div></div>
       </a>
       <a class="contact-link glass" href="https://t.me/donyorzodeeee" rel="noopener">
-        <span class="contact-ic">✈️</span><div><div class="cl">Telegram</div><div class="cs">@donyorzodeeee</div></div>
+        <span class="contact-ic"><img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram"></span><div><div class="cl">Telegram</div><div class="cs">@donyorzodeeee</div></div>
       </a>
       <a class="contact-link glass" href="https://www.instagram.com/ismatwohhhh.7?igsi=YWExNTE5amdtOTU5" rel="noopener">
-        <span class="contact-ic">📷</span><div><div class="cl">Instagram</div><div class="cs">@ismatwohhhh.7</div></div>
+        <span class="contact-ic"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram"></span><div><div class="cl">Instagram</div><div class="cs">@ismatwohhhh.7</div></div>
       </a>
     </div>
     <div class="onb-sub" style="text-align:left; font-size:11.5px; opacity:.6; margin-top:10px;">${t('demoNote')}</div>
@@ -14125,7 +14172,7 @@ function wordCardHtml(w){
   const speakTarget = S.learnLang==='ru' ? ru : en;
   const speakLang = S.learnLang==='ru' ? 'ru' : 'en';
   return `<div class="lib-card glass">
-    <div class="lib-card-pic">${emojiFor(w[0])}</div>
+    <div class="lib-card-pic">${livePhotoHtml(wordPhotoUrl(en), en)}</div>
     <div class="lw">${esc(w[0])}</div>
     <div class="lph">${esc(ipa)} · ${t('pronunciation')}</div>
     <div class="lt">${esc(tr)}${en && ru && en!==ru ? ' · '+esc(S.learnLang==='ru'?en:ru) : ''}</div>
@@ -14156,7 +14203,7 @@ function renderLibrary(){
   const slice = list.slice(S.libPage*PAGE, S.libPage*PAGE+PAGE);
   const catTiles = CAT_ORDER.filter(c=>counts[c]).map(c=>`
     <button class="cat-tile glass" onclick="App.setLibCat('${c}')">
-      <span class="ci">${CAT_ICON[c]||'🔖'}</span>
+      <span class="ci">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]))}</span>
       <span class="cn">${t(CAT_KEY[c])}</span>
       <span class="cc">${counts[c]} ${t('wordsCount')}</span>
     </button>`).join('');
@@ -14171,7 +14218,7 @@ function renderLibrary(){
     </div>
     ${!showCats? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
       <button class="pill-btn" style="${cat==='all'?'background:var(--grad-1); color:#0a0b0f; border-color:transparent;':''}" onclick="App.setLibCat('all')">✨ ${t('catAll')}</button>
-      ${CAT_ORDER.filter(c=>counts[c]).map(c=>`<button class="pill-btn ${cat===c?'active':''}" style="${cat===c?'background:var(--grad-1); color:#0a0b0f; border-color:transparent;':''}" onclick="App.setLibCat('${c}')">${CAT_ICON[c]||''} ${t(CAT_KEY[c])}</button>`).join('')}
+      ${CAT_ORDER.filter(c=>counts[c]).map(c=>`<button class="pill-btn ${cat===c?'active':''}" style="${cat===c?'background:var(--grad-1); color:#0a0b0f; border-color:transparent;':''}" onclick="App.setLibCat('${c}')">${t(CAT_KEY[c])}</button>`).join('')}
     </div>`:''}`}
     ${showCats ? `<div class="section-head" style="margin:4px 0 12px;"><h2>${t('libAllCats')}</h2></div><div class="cat-grid">${catTiles}</div>` : (
       slice.length===0 ? `<div class="lib-empty">${t('libNoResults')}</div>` :
@@ -14313,23 +14360,30 @@ function buildAssembleQuestion(triple, lang, seed){
   const target = wordTarget(triple, lang).toLowerCase();
   const letters = target.replace(/\s+/g,'').split('');
   const scrambled = seededShuffle(letters, seed);
-  return { tj: triple[0], answer: target, letters: scrambled, qtype:'assemble', word: triple[0], emoji: emojiFor(triple[0]) };
+  return { tj: triple[0], en: triple[1]||target, answer: target, letters: scrambled, qtype:'assemble', word: triple[0] };
 }
 
 /* ---------- NEW: CATEGORY SETTINGS (which topics Home's quick-practice pulls from) ---------- */
 function renderCategorySettings(){
   const sel = S.catDraft || [];
+  const n = sel.length;
+  const full = n>=MAX_LEARN_CATS;
   return `<div class="app-shell" style="max-width:640px;">
     <button class="back-link" onclick="App.go('dashboard')">← ${t('dashboard')}</button>
-    <h1 class="disp" style="font-size:19px; margin-bottom:20px; line-height:1.45;">${t('catSettingsTitle')}</h1>
+    <h1 class="disp" style="font-size:19px; margin-bottom:8px; line-height:1.45;">${t('catSettingsTitle')}</h1>
+    <div class="onb-sub" style="text-align:left; margin-bottom:8px;">${t('catHint')}</div>
+    <div class="row-item glass" style="margin-bottom:14px;"><div class="rl">${t('catPicked')}</div><div style="font-weight:800; color:var(--violet);">${n} / ${MAX_LEARN_CATS}</div></div>
     <div class="cat-list">
-      ${CAT_ORDER.map(c=>`
-        <label class="cat-check-row glass">
-          <span class="cc-ic">${CAT_ICON[c]||'🔖'}</span>
+      ${CAT_ORDER.map(c=>{
+        const on = sel.includes(c);
+        return `
+        <label class="cat-check-row glass ${(!on && full)?'dimmed':''}">
+          <span class="cc-ic">${livePhotoHtml(catPhotoUrl(c), t(CAT_KEY[c]))}</span>
           <span class="cc-lbl">${t(CAT_KEY[c])}</span>
-          <input type="checkbox" ${sel.includes(c)?'checked':''} onchange="App.toggleCat('${c}')">
-          <span class="cc-box">${sel.includes(c)?'✓':''}</span>
-        </label>`).join('')}
+          <input type="checkbox" ${on?'checked':''} onchange="App.toggleCat('${c}')">
+          <span class="cc-box">${on?'✓':''}</span>
+        </label>`;
+      }).join('')}
     </div>
     <button class="btn btn-primary btn-block" style="margin-top:18px;" onclick="App.saveCats()">${t('catSaveExit')}</button>
   </div>`;
@@ -14374,7 +14428,7 @@ function renderAssemble(){
     </div>
     <div class="qcard glass type-fillblank" style="text-align:center;">
       <div class="qtype-badge">🧩 ${t('assembleTitle')}</div>
-      <div style="font-size:60px; margin-bottom:4px; line-height:1;">${cur.emoji}</div>
+      <div class="asm-photo">${livePhotoHtml(wordPhotoUrl(cur.en||cur.answer), cur.en||cur.answer)}</div>
       <div class="qmeta" style="margin-bottom:2px;">${t('questionOfN')} ${a.idx+1} / ${a.words.length}</div>
       <div class="onb-sub" style="margin:6px 0 20px;">${esc(cur.tj)}</div>
       <div class="assemble-slots">
@@ -14755,13 +14809,25 @@ const App = {
     persistAccount(); render();
   },
   /* ---- Category settings ---- */
-  openCatSettings(){ S.catDraft = (S.stats.selectedCats||[]).slice(); go('catset'); },
-  toggleCat(c){ const i=S.catDraft.indexOf(c); if(i>=0) S.catDraft.splice(i,1); else S.catDraft.push(c); render(); },
-  saveCats(){ S.stats.selectedCats = S.catDraft.slice(); persistAccount(); toast(t('catSaved')); go('dashboard'); },
+  openCatSettings(){ S.catDraft = (S.stats.selectedCats||[]).slice(0, MAX_LEARN_CATS); go('catset'); },
+  toggleCat(c){
+    S.catDraft = S.catDraft||[];
+    const i=S.catDraft.indexOf(c);
+    if(i>=0) S.catDraft.splice(i,1);
+    else if(S.catDraft.length>=MAX_LEARN_CATS){ toast(t('catMaxFive')); return; }
+    else S.catDraft.push(c);
+    render();
+  },
+  saveCats(){
+    if(!(S.catDraft||[]).length){ toast(t('catNeedOne')); return; }
+    S.stats.selectedCats = S.catDraft.slice(0, MAX_LEARN_CATS);
+    persistAccount(); toast(t('catSaved')); go('dashboard');
+  },
   /* ---- My Words ---- */
   openMyWordsList(kind){ S.libSpecial=kind; go('library'); },
   /* ---- Home quick-practice (multiple-choice, category-filtered, does not touch Course progress) ---- */
   startMix(){
+    if(!(S.stats.selectedCats||[]).length){ toast(t('catNeedPick')); App.openCatSettings(); return; }
     const pool = poolBySelectedCats();
     if(pool.length<4){ toast(t('needMoreWords')); return; }
     S.quiz = { level:null, variant:null, mode:'quick', questions:buildQuickSet(pool, S.learnLang), idx:0, correct:0, wrong:0, locked:false };
@@ -14776,6 +14842,7 @@ const App = {
   },
   /* ---- Word-assembly game ---- */
   startAssemble(){
+    if(!(S.stats.selectedCats||[]).length){ toast(t('catNeedPick')); App.openCatSettings(); return; }
     const pool = poolBySelectedCats();
     const words = seededShuffle(pool, Date.now()%999999).slice(0,10);
     if(words.length<3){ toast(t('needMoreWords')); return; }
@@ -14990,6 +15057,7 @@ const App = {
   },
   /* ---- Crossword ---- */
   startCrossword(){
+    if(!(S.stats.selectedCats||[]).length){ toast(t('catNeedPick')); App.openCatSettings(); return; }
     const pool = poolBySelectedCats();
     if(pool.length<6){ toast(t('needMoreWords')); return; }
     const cw = buildCrossword(pool, S.learnLang, 8);
